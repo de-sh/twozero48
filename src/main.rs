@@ -1,5 +1,5 @@
 use rand::prelude::*;
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 
 const WINNING: i32 = 2048;
 const BOARD_SIZE: usize = 4;
@@ -105,7 +105,7 @@ fn spawn(board: &mut Board) {
 }
 
 /// Verify if board is filled and no valid moves left
-fn is_locked(board: &Vec<Vec<i32>>) -> bool {
+fn is_locked(board: &Board) -> bool {
     if contains(&board, 0) {
         return false;
     }
@@ -129,10 +129,44 @@ fn is_locked(board: &Vec<Vec<i32>>) -> bool {
 }
 
 /// Check if board contains value x
-fn contains(board: &Vec<Vec<i32>>, x: i32) -> bool {
+fn contains(board: &Board, x: i32) -> bool {
     board
         .iter()
         .fold(false, |t, v| t || v.iter().fold(false, |u, w| u || *w == x))
+}
+
+/// Used to depict user choice, used as input to API
+enum Move {
+    Left,
+    Right,
+    Up,
+    Down,
+    Dont
+}
+
+/// Game entry-point
+fn mover(board: &mut Board, mov: Move) -> Option<bool> {
+    let temp = board.clone();
+
+    match mov {
+        Move::Left => move_left(board),
+        Move::Right => move_right(board),
+        Move::Up => move_up(board),
+        Move::Down => move_down(board),
+        _ => (),
+    }
+
+    if is_locked(&board) {
+        println!("You have Lost!");
+        return None;
+    }
+
+    if contains(&board, WINNING) {
+        println!("You have Won!");
+        return None;
+    }
+
+    Some(*board != temp)
 }
 
 fn main() {
@@ -155,43 +189,26 @@ fn main() {
             spawn(&mut board);
             print(&board);
             print!("\nInput: ");
+        } else {
+            print!("ILLEGAL INPUT, TRY AGAIN\nInput: ");
         }
-
-        let temp = board.clone();
 
         io::stdout().flush().expect("Error");
 
-        let input = std::io::stdin()
-            .bytes()
-            .next()
-            .and_then(|result| result.ok())
-            .map(|byte| byte as char)
-            .unwrap();
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
 
-        match input.to_ascii_lowercase() {
-            'a' => {
-                move_left(&mut board);
-            }
-            'd' => {
-                move_right(&mut board);
-            }
-            'w' => {
-                move_up(&mut board);
-            }
-            's' => {
-                move_down(&mut board);
-            }
-            _ => (),
-        }
+        let mov = match input.chars().nth(0).unwrap().to_ascii_lowercase() {
+            'a' => Move::Left,
+            'd' => Move::Right,
+            'w' => Move::Up,
+            's' => Move::Down,
+            _ => Move::Dont,
+        };
 
-        valid_move = board != temp;
-
-        if is_locked(&board) {
-            println!("You have Lost!");
-        }
-
-        if contains(&board, WINNING) {
-            println!("You have Won!");
-        }
+        valid_move = match mover(&mut board, mov) {
+            Some(t) => t,
+            None => return
+        };
     }
 }
