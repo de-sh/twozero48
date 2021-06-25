@@ -145,28 +145,28 @@ enum Move {
 }
 
 /// Game entry-point
-fn mover(board: &mut Board, mov: Move) -> Option<bool> {
+fn mover(mut board: Board, mov: Move) -> Result<(Board, bool), String> {
     let temp = board.clone();
 
     match mov {
-        Move::Left => move_left(board),
-        Move::Right => move_right(board),
-        Move::Up => move_up(board),
-        Move::Down => move_down(board),
+        Move::Left => move_left(&mut board),
+        Move::Right => move_right(&mut board),
+        Move::Up => move_up(&mut board),
+        Move::Down => move_down(&mut board),
         _ => (),
     }
 
     if is_locked(&board) {
-        println!("You have Lost!");
-        return None;
+        return Err("You have Lost!".to_string());
     }
 
     if contains(&board, WINNING) {
-        println!("You have Won!");
-        return None;
+        return Err("You have Won!".to_string());
     }
 
-    Some(*board != temp)
+    let valid_move = board != temp;
+
+    Ok((board, valid_move))
 }
 
 fn main() {
@@ -206,9 +206,15 @@ fn main() {
             _ => Move::Dont,
         };
 
-        valid_move = match mover(&mut board, mov) {
-            Some(t) => t,
-            None => return
+        match mover(board, mov) {
+            Ok((b, v)) => {
+                board = b;
+                valid_move = v;
+            },
+            Err(e) => {
+                eprintln!("{}", e);
+                return;
+            }
         };
     }
 }
