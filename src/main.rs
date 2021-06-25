@@ -157,6 +157,8 @@ fn main() {
             print!("\nInput: ");
         }
 
+        let temp = board.clone();
+
         io::stdout().flush().expect("Error");
 
         let input = std::io::stdin()
@@ -166,25 +168,23 @@ fn main() {
             .map(|byte| byte as char)
             .unwrap();
 
-        match input {
+        match input.to_ascii_lowercase() {
             'a' => {
                 move_left(&mut board);
-                valid_move = true;
             }
             'd' => {
                 move_right(&mut board);
-                valid_move = true;
             }
             'w' => {
                 move_up(&mut board);
-                valid_move = true;
             }
             's' => {
                 move_down(&mut board);
-                valid_move = true;
             }
-            _ => valid_move = false,
+            _ => (),
         }
+
+        valid_move = board != temp;
 
         if is_locked(&board) {
             println!("You have Lost!");
