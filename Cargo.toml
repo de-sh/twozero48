@@ -7,3 +7,7 @@ edition = "2018"
 [dependencies]
 nalgebra = "*"
 rand = "*"
+
+[[bin]]
+name = "twozero48"
+path = "src/main.rs"
