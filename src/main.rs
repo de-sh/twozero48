@@ -3,7 +3,7 @@ use twozero48::{Board, Move};
 
 fn main() {
     // Initializes the game board
-    let mut board = Board::new();
+    let mut board = Board::new(4, 2048);
 
     let mut valid_move = true;
 
