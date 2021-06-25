@@ -1,0 +1,9 @@
+[package]
+name = "twozero48"
+version = "0.1.0"
+authors = ["Devdutt Shenoi <devdutt@outlook.in>"]
+edition = "2018"
+
+[dependencies]
+nalgebra = "*"
+rand = "*"
