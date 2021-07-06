@@ -9,13 +9,15 @@ pub enum Move {
     Dont,
 }
 
-pub struct Board {
-    board: Vec<Vec<i32>>,
+type Board = Vec<Vec<i32>>;
+
+pub struct Game {
+    board: Board,
     board_size: usize,
     winning: i32,
 }
 
-impl Board {
+impl Game {
     pub fn new(board_size: usize, winning: i32) -> Self {
         let mut init = Self {
             board: vec![
@@ -92,16 +94,6 @@ impl Board {
         }
     }
 
-    /// Prints the board as is
-    pub fn print(&self) {
-        for row in self.board.iter() {
-            for j in row.iter() {
-                print!("{} ", j);
-            }
-            println!();
-        }
-    }
-
     /// Sets a random location to the value 2 if currently 0
     fn spawn(&mut self) {
         let mut rng = rand::thread_rng();
@@ -119,10 +111,10 @@ impl Board {
         }
     }
 
-    /// To refresh a board after a valid move
-    pub fn refresh(&mut self) {
+    /// To refresh and return a reference to the game board after a valid move
+    pub fn refreshed(&mut self) -> &Board {
         self.spawn();
-        self.print();
+        &self.board
     }
 
     /// Verify if board is filled and no valid moves left

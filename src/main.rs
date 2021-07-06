@@ -1,9 +1,10 @@
 use std::io::{self, Write};
-use twozero48::{Board, Move};
+use twozero48::{Game, Move};
+
 
 fn main() {
-    // Initializes the game board
-    let mut board = Board::new(4, 2048);
+    // Initializes the game
+    let mut game = Game::new(4, 2048);
 
     let mut valid_move = true;
 
@@ -11,7 +12,12 @@ fn main() {
 
     loop {
         if valid_move {
-            board.refresh();
+            for row in game.refreshed() {
+                for block in row {
+                    print!("{} ", block);
+                }
+                println!();
+            }
             print!("\nInput: ");
         } else {
             print!("ILLEGAL INPUT, TRY AGAIN\nInput: ");
@@ -30,11 +36,11 @@ fn main() {
             _ => Move::Dont,
         };
 
-        match board.mover(mov) {
-            Ok(v) => valid_move = v,
+        valid_move = match game.mover(mov) {
+            Ok(v) => v,
             Err(e) => {
                 eprintln!("{}", e);
-                return;
+                break;
             }
         };
     }
