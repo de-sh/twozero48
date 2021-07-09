@@ -1,38 +1,38 @@
-use std::io::{self, Write};
+use std::io::{stdin, stdout, Write};
+use termion::{event::Key, input::TermRead, raw::IntoRawMode};
 use twozero48::{Game, Move};
 
-
 fn main() {
+    let mut keys = stdin().keys();
+    let mut stdout = stdout().into_raw_mode().unwrap();
+
     // Initializes the game
     let mut game = Game::new(4, 2048);
 
     let mut valid_move = true;
 
-    println!("Press A D W S to slide Left Right Up Down\n");
+    println!("Press A D W S or arrow keys to slide Left Right Up Down\n\r");
 
     loop {
         if valid_move {
             for row in game.refreshed() {
                 for block in row {
-                    print!("{} ", block);
+                    write!(stdout, "{}  ", block).unwrap();
                 }
-                println!();
+                writeln!(stdout, "\r").unwrap();
             }
-            print!("\nInput: ");
         } else {
-            print!("ILLEGAL INPUT, TRY AGAIN\nInput: ");
+            write!(stdout, "ILLEGAL INPUT, TRY AGAIN\n\r").unwrap();
         }
 
-        io::stdout().flush().expect("Error");
+        writeln!(stdout, "\r").unwrap();
 
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-
-        let mov = match input.chars().nth(0).unwrap().to_ascii_lowercase() {
-            'a' => Move::Left,
-            'd' => Move::Right,
-            'w' => Move::Up,
-            's' => Move::Down,
+        let mov = match keys.next().unwrap().unwrap() {
+            Key::Char('q') | Key::Char('Q') | Key::Ctrl('c') => break,
+            Key::Char('a') | Key::Char('A') | Key::Left => Move::Left,
+            Key::Char('d') | Key::Char('D') | Key::Right => Move::Right,
+            Key::Char('w') | Key::Char('W') | Key::Up => Move::Up,
+            Key::Char('s') | Key::Char('S') | Key::Down => Move::Down,
             _ => Move::Dont,
         };
 

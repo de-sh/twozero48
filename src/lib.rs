@@ -40,7 +40,7 @@ impl Game {
     fn move_left(&mut self) {
         for i in 0..self.board_size {
             let mut v = self.board[i].clone();
-            
+
             self.vec_compress(&mut v);
 
             self.board[i] = v;
