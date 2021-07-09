@@ -17,9 +17,9 @@ fn main() {
         if valid_move {
             for row in game.refreshed() {
                 for block in row {
-                    write!(stdout, "{}  ", block).unwrap();
+                    write!(stdout, "{}\t", block).unwrap();
                 }
-                writeln!(stdout, "\r").unwrap();
+                writeln!(stdout, "\n\r").unwrap();
             }
         } else {
             write!(stdout, "ILLEGAL INPUT, TRY AGAIN\n\r").unwrap();
