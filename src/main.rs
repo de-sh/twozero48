@@ -17,27 +17,29 @@ fn main() {
     loop {
         write!(stdout, "{}", clear::All).unwrap();
         if valid_move {
-            for row in game.refreshed() {
-                for block in row {
-                    match block {
-                        2 => write!(stdout, "{}{}\t{}", color::Fg(color::Blue), block, reset).unwrap(),
-                        4 => write!(stdout, "{}{}\t{}", color::Fg(color::LightBlue), block, reset).unwrap(),
-                        8 => write!(stdout, "{}{}\t{}", color::Fg(color::Cyan), block, reset).unwrap(),
-                        16 => write!(stdout, "{}{}\t{}", color::Fg(color::LightCyan), block, reset).unwrap(),
-                        32 => write!(stdout, "{}{}\t{}", color::Fg(color::Green), block, reset).unwrap(),
-                        64 => write!(stdout, "{}{}\t{}", color::Fg(color::LightGreen), block, reset).unwrap(),
-                        128 => write!(stdout, "{}{}\t{}", color::Fg(color::Magenta), block, reset).unwrap(),
-                        256 => write!(stdout, "{}{}\t{}", color::Fg(color::LightMagenta), block, reset).unwrap(),
-                        512 => write!(stdout, "{}{}\t{}", color::Fg(color::Red), block, reset).unwrap(),
-                        1024 => write!(stdout, "{}{}\t{}", color::Fg(color::LightRed), block, reset).unwrap(),
-                        2048 => write!(stdout, "{}{}\t{}", color::Fg(color::Yellow), block, reset).unwrap(),
-                        _ => write!(stdout, "{}\t", block).unwrap(),
-                    }
-                }
-                writeln!(stdout, "\n\r").unwrap();
-            }
+            game.refresh();
         } else {
-            write!(stdout, "ILLEGAL INPUT, TRY AGAIN\n\r").unwrap();
+            write!(stdout, "{}ILLEGAL INPUT, TRY AGAIN{}\n\n\r", color::Fg(color::Red), reset).unwrap();
+        }
+
+        for row in game.board() {
+            for block in row {
+                match block {
+                    2 => write!(stdout, "{}{}\t{}", color::Fg(color::Blue), block, reset).unwrap(),
+                    4 => write!(stdout, "{}{}\t{}", color::Fg(color::LightBlue), block, reset).unwrap(),
+                    8 => write!(stdout, "{}{}\t{}", color::Fg(color::Cyan), block, reset).unwrap(),
+                    16 => write!(stdout, "{}{}\t{}", color::Fg(color::LightCyan), block, reset).unwrap(),
+                    32 => write!(stdout, "{}{}\t{}", color::Fg(color::Green), block, reset).unwrap(),
+                    64 => write!(stdout, "{}{}\t{}", color::Fg(color::LightGreen), block, reset).unwrap(),
+                    128 => write!(stdout, "{}{}\t{}", color::Fg(color::Magenta), block, reset).unwrap(),
+                    256 => write!(stdout, "{}{}\t{}", color::Fg(color::LightMagenta), block, reset).unwrap(),
+                    512 => write!(stdout, "{}{}\t{}", color::Fg(color::Yellow), block, reset).unwrap(),
+                    1024 => write!(stdout, "{}{}\t{}", color::Fg(color::LightYellow), block, reset).unwrap(),
+                    2048 => write!(stdout, "{}{}\t{}", color::Fg(color::LightRed), block, reset).unwrap(),
+                    _ => write!(stdout, "{}\t", block).unwrap(),
+                }
+            }
+            writeln!(stdout, "\n\r").unwrap();
         }
 
         writeln!(stdout, "\r").unwrap();

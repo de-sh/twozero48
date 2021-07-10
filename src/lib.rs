@@ -36,6 +36,11 @@ impl Game {
         init
     }
 
+    // Return immutable reference to the board
+    pub fn board(&self) -> &Board {
+        &self.board
+    }
+
     /// Performs the compression of board's values towards the left most column
     fn move_left(&mut self) {
         for i in 0..self.board_size {
@@ -112,9 +117,8 @@ impl Game {
     }
 
     /// To refresh and return a reference to the game board after a valid move
-    pub fn refreshed(&mut self) -> &Board {
+    pub fn refresh(&mut self) {
         self.spawn();
-        &self.board
     }
 
     /// Verify if board is filled and no valid moves left
