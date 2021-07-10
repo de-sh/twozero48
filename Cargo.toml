@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Devdutt Shenoi <devdutt@outlook.in>"]
 edition = "2018"
 license = "MIT"
+repository = "https://github.com/de-sh/twozero48"
+description = "A CLI implementation of 2048, in rust"
 
 [dependencies]
 termion = "1"
