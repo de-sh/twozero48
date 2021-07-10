@@ -14,21 +14,24 @@ pub enum Move {
     Dont,
 }
 
-type Board = Vec<Vec<i32>>;
+type Board = Vec<Vec<usize>>;
 
 /// An object that models the board to play 2048 on and defines the rules for the game
 pub struct Game {
     board: Board,
     board_size: usize,
-    winning: i32,
+    winning: usize,
 }
 
 impl Game {
     /// Constructs a board to play the game
-    pub fn new(board_size: usize, winning: i32) -> Self {
+    pub fn new(board_size: usize, winning: usize) -> Self {
         let empty = vec![0].repeat(board_size);
         let mut board = vec![];
         board.resize(board_size, empty);
+
+        // Ensure the winning point is a power of two, in order to be reached within game logic
+        let winning = 2usize.pow((winning as f32).log2().abs() as u32);
 
         let mut init = Self {
             board,
@@ -45,6 +48,11 @@ impl Game {
     /// Return immutable reference to the board
     pub fn board(&self) -> &Board {
         &self.board
+    }
+
+    /// Returns the value for winning
+    pub fn winning(&self) -> usize {
+        self.winning
     }
 
     /// Performs the compression of board's values towards the left most column
@@ -152,7 +160,7 @@ impl Game {
     }
 
     /// Check if board contains value x
-    fn contains(&self, x: i32) -> bool {
+    fn contains(&self, x: usize) -> bool {
         self.board
             .iter()
             .fold(false, |t, v| t || v.iter().fold(false, |u, w| u || *w == x))
@@ -182,7 +190,7 @@ impl Game {
     }
 
     /// Compress a row/column
-    fn vec_compress(&self, v: &mut Vec<i32>) {
+    fn vec_compress(&self, v: &mut Vec<usize>) {
         v.retain(|x| *x != 0);
         let vl = v.len();
 
