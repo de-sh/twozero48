@@ -7,6 +7,5 @@ To play the game, after cloning to local and opening the directory in terminal, 
 cargo run
 ```
 
-## TODO
-- Could use CLI libraries such as clap.rs to become CLI native.
-- Could use a lot less Clone, where possible.
+## License
+Code in this repository is licensed under the permissive MIT license. All code contributions are by default considered to be under the same.
