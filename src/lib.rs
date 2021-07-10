@@ -1,16 +1,22 @@
 use rand::prelude::*;
 
-/// Used to depict user choice, used as input to API
+/// Used to depict user choice, an input to the [`Game`] API
 pub enum Move {
+    /// Executes leftward compression of board elements
     Left,
+    /// Executes rightward compression of board elements
     Right,
+    /// Executes upward compression of board elements
     Up,
+    /// Executes downward compression of board elements
     Down,
+    /// Condition triggered incase input is improper
     Dont,
 }
 
 type Board = Vec<Vec<i32>>;
 
+/// An object that models the board to play 2048 on and defines the rules for the game
 pub struct Game {
     board: Board,
     board_size: usize,
@@ -18,14 +24,14 @@ pub struct Game {
 }
 
 impl Game {
+    /// Constructs a board to play the game
     pub fn new(board_size: usize, winning: i32) -> Self {
+        let empty = vec![0].repeat(board_size);
+        let mut board = vec![];
+        board.resize(board_size, empty);
+
         let mut init = Self {
-            board: vec![
-                vec![0, 0, 0, 0],
-                vec![0, 0, 0, 0],
-                vec![0, 0, 0, 0],
-                vec![0, 0, 0, 0],
-            ],
+            board,
             board_size,
             winning,
         };
@@ -36,7 +42,7 @@ impl Game {
         init
     }
 
-    // Return immutable reference to the board
+    /// Return immutable reference to the board
     pub fn board(&self) -> &Board {
         &self.board
     }
@@ -152,7 +158,7 @@ impl Game {
             .fold(false, |t, v| t || v.iter().fold(false, |u, w| u || *w == x))
     }
 
-    /// Game entry-point
+    /// [`Game`] API entry-point, operated by [`Move`] as input
     pub fn mover(&mut self, mov: Move) -> Result<bool, String> {
         let temp = self.board.clone();
 

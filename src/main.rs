@@ -1,21 +1,66 @@
-use std::io::{stdin, stdout, Write};
-use termion::{clear, color, event::Key, input::TermRead, raw::IntoRawMode};
+use std::io::{stdin, stdout, Stdout, Write};
+use termion::{
+    clear, color,
+    event::Key,
+    input::TermRead,
+    raw::{IntoRawMode, RawTerminal},
+};
 use twozero48::{Game, Move};
 
+const RESET: color::Fg<color::Reset> = color::Fg(color::Reset);
+
+fn print_board(stdout: &mut RawTerminal<Stdout>, board: &Vec<Vec<i32>>) {
+    write!(stdout, "{}", clear::All).unwrap();
+
+    for row in board {
+        for block in row {
+            // Define a macro for DRY
+            macro_rules! print_block {
+                ($color: expr) => {
+                    write!(stdout, "{}{}\t{}", $color, block, RESET).unwrap()
+                };
+            }
+
+            match block {
+                2 => print_block!(color::Fg(color::Blue)),
+                4 => print_block!(color::Fg(color::LightBlue)),
+                8 => print_block!(color::Fg(color::Cyan)),
+                16 => print_block!(color::Fg(color::LightCyan)),
+                32 => print_block!(color::Fg(color::Green)),
+                64 => print_block!(color::Fg(color::LightGreen)),
+                128 => print_block!(color::Fg(color::Magenta)),
+                256 => print_block!(color::Fg(color::LightMagenta)),
+                512 => print_block!(color::Fg(color::Yellow)),
+                1024 => print_block!(color::Fg(color::LightYellow)),
+                2048 => print_block!(color::Fg(color::LightRed)),
+                _ => write!(stdout, "{}\t", block).unwrap(),
+            }
+        }
+        writeln!(stdout, "\n\r").unwrap();
+    }
+}
 fn main() {
+    // Initializes the game
+    macro_rules! input {
+        ($msg: expr) => {{
+            let mut input = String::new();
+            print!("{}", $msg);
+            stdout().flush().unwrap();
+            stdin().read_line(&mut input).expect("Error reading input");
+            input.trim().parse().unwrap()
+        }};
+    }
+    let board_size: usize = input!("Input board size: ");
+    let winning: i32 = input!("Input winning number: ");
+
+    let mut game = Game::new(board_size, winning);
+
+    let mut valid_move = true;
+
     let mut keys = stdin().keys();
     let mut stdout = stdout().into_raw_mode().unwrap();
 
-    // Initializes the game
-    let mut game = Game::new(4, 2048);
-
-    let mut valid_move = true;
-    let reset = color::Fg(color::Reset);
-
-    println!("Press A D W S or arrow keys to slide Left Right Up Down\n\r");
-
     loop {
-        write!(stdout, "{}", clear::All).unwrap();
         if valid_move {
             game.refresh();
         } else {
@@ -23,72 +68,17 @@ fn main() {
                 stdout,
                 "{}ILLEGAL INPUT, TRY AGAIN{}\n\n\r",
                 color::Fg(color::Red),
-                reset
+                RESET
             )
             .unwrap();
         }
 
-        for row in game.board() {
-            for block in row {
-                match block {
-                    2 => write!(stdout, "{}{}\t{}", color::Fg(color::Blue), block, reset).unwrap(),
-                    4 => write!(
-                        stdout,
-                        "{}{}\t{}",
-                        color::Fg(color::LightBlue),
-                        block,
-                        reset
-                    )
-                    .unwrap(),
-                    8 => write!(stdout, "{}{}\t{}", color::Fg(color::Cyan), block, reset).unwrap(),
-                    16 => write!(
-                        stdout,
-                        "{}{}\t{}",
-                        color::Fg(color::LightCyan),
-                        block,
-                        reset
-                    )
-                    .unwrap(),
-                    32 => {
-                        write!(stdout, "{}{}\t{}", color::Fg(color::Green), block, reset).unwrap()
-                    }
-                    64 => write!(
-                        stdout,
-                        "{}{}\t{}",
-                        color::Fg(color::LightGreen),
-                        block,
-                        reset
-                    )
-                    .unwrap(),
-                    128 => {
-                        write!(stdout, "{}{}\t{}", color::Fg(color::Magenta), block, reset).unwrap()
-                    }
-                    256 => write!(
-                        stdout,
-                        "{}{}\t{}",
-                        color::Fg(color::LightMagenta),
-                        block,
-                        reset
-                    )
-                    .unwrap(),
-                    512 => {
-                        write!(stdout, "{}{}\t{}", color::Fg(color::Yellow), block, reset).unwrap()
-                    }
-                    1024 => write!(
-                        stdout,
-                        "{}{}\t{}",
-                        color::Fg(color::LightYellow),
-                        block,
-                        reset
-                    )
-                    .unwrap(),
-                    2048 => write!(stdout, "{}{}\t{}", color::Fg(color::LightRed), block, reset)
-                        .unwrap(),
-                    _ => write!(stdout, "{}\t", block).unwrap(),
-                }
-            }
-            writeln!(stdout, "\n\r").unwrap();
-        }
+        print_board(&mut stdout, game.board());
+        writeln!(
+            stdout,
+            "Press A D W S or arrow keys to slide Left Right Up Down\n\r"
+        )
+        .unwrap();
 
         writeln!(stdout, "\r").unwrap();
 
@@ -104,7 +94,8 @@ fn main() {
         valid_move = match game.mover(mov) {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("{}", e);
+                print_board(&mut stdout, game.board());
+                writeln!(stdout, "{}{}{}", color::Fg(color::Red), e, RESET).unwrap();
                 break;
             }
         };
