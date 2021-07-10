@@ -5,7 +5,6 @@ authors = ["Devdutt Shenoi <devdutt@outlook.in>"]
 edition = "2018"
 
 [dependencies]
-nalgebra = "*"
 termion = "1"
 rand = "0.7"
 

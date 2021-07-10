@@ -1,5 +1,5 @@
 use std::io::{stdin, stdout, Write};
-use termion::{event::Key, input::TermRead, raw::IntoRawMode};
+use termion::{event::Key, color, clear, input::TermRead, raw::IntoRawMode};
 use twozero48::{Game, Move};
 
 fn main() {
@@ -10,14 +10,29 @@ fn main() {
     let mut game = Game::new(4, 2048);
 
     let mut valid_move = true;
+    let reset = color::Fg(color::Reset);
 
     println!("Press A D W S or arrow keys to slide Left Right Up Down\n\r");
 
     loop {
+        write!(stdout, "{}", clear::All).unwrap();
         if valid_move {
             for row in game.refreshed() {
                 for block in row {
-                    write!(stdout, "{}\t", block).unwrap();
+                    match block {
+                        2 => write!(stdout, "{}{}\t{}", color::Fg(color::Blue), block, reset).unwrap(),
+                        4 => write!(stdout, "{}{}\t{}", color::Fg(color::LightBlue), block, reset).unwrap(),
+                        8 => write!(stdout, "{}{}\t{}", color::Fg(color::Cyan), block, reset).unwrap(),
+                        16 => write!(stdout, "{}{}\t{}", color::Fg(color::LightCyan), block, reset).unwrap(),
+                        32 => write!(stdout, "{}{}\t{}", color::Fg(color::Green), block, reset).unwrap(),
+                        64 => write!(stdout, "{}{}\t{}", color::Fg(color::LightGreen), block, reset).unwrap(),
+                        128 => write!(stdout, "{}{}\t{}", color::Fg(color::Magenta), block, reset).unwrap(),
+                        256 => write!(stdout, "{}{}\t{}", color::Fg(color::LightMagenta), block, reset).unwrap(),
+                        512 => write!(stdout, "{}{}\t{}", color::Fg(color::Red), block, reset).unwrap(),
+                        1024 => write!(stdout, "{}{}\t{}", color::Fg(color::LightRed), block, reset).unwrap(),
+                        2048 => write!(stdout, "{}{}\t{}", color::Fg(color::Yellow), block, reset).unwrap(),
+                        _ => write!(stdout, "{}\t", block).unwrap(),
+                    }
                 }
                 writeln!(stdout, "\n\r").unwrap();
             }
