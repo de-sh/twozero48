@@ -14,6 +14,16 @@ pub enum Move {
     Dont,
 }
 
+/// Used to depict the status in the [`Game`] API
+pub enum Status {
+    /// Game has finished, player won
+    Won,
+    /// Game has finished, player lost
+    Lost,
+    /// Game continues, neither won nor lost
+    On,
+}
+
 type Board = Vec<Vec<usize>>;
 
 /// An object that models the board to play 2048 on and defines the rules for the game
@@ -25,13 +35,20 @@ pub struct Game {
 
 impl Game {
     /// Constructs a board to play the game
+    /// board_size >= 2, defines board's length & breadth
+    /// winning >= 4 and a power of 2, defines the value for game to havae been won
     pub fn new(board_size: usize, winning: usize) -> Self {
+        // Ensure the board size is atleast 2
+        let board_size = board_size.clamp(2, usize::MAX);
+        // Ensure the winning point is a power of two and >= 4, in order to be reached within game logic
+        let winning = 2usize
+            .pow((winning as f32).log2().abs() as u32)
+            .clamp(4, usize::MAX);
+
+        // initialize an empty board of 0s
         let empty = vec![0].repeat(board_size);
         let mut board = vec![];
         board.resize(board_size, empty);
-
-        // Ensure the winning point is a power of two, in order to be reached within game logic
-        let winning = 2usize.pow((winning as f32).log2().abs() as u32);
 
         let mut init = Self {
             board,
@@ -119,6 +136,7 @@ impl Game {
 
         loop {
             let x: usize = rng.gen();
+
             if self.board[x % self.board_size][(x / 10) % self.board_size] == 0 {
                 if x % 5 == 0 {
                     self.board[x % self.board_size][(x / 10) % self.board_size] = 4;
@@ -166,8 +184,19 @@ impl Game {
             .fold(false, |t, v| t || v.iter().fold(false, |u, w| u || *w == x))
     }
 
+    pub fn status(&self) -> Status {
+        if self.contains(self.winning) {
+            Status::Won
+        } else if self.is_locked() {
+            Status::Lost
+        } else {
+            Status::On
+        }
+    }
+
     /// [`Game`] API entry-point, operated by [`Move`] as input
-    pub fn mover(&mut self, mov: Move) -> Result<bool, String> {
+    /// Output bool is used to check if move caused any change to the board
+    pub fn mover(&mut self, mov: Move) -> bool {
         let temp = self.board.clone();
 
         match mov {
@@ -178,15 +207,7 @@ impl Game {
             _ => (),
         }
 
-        if self.is_locked() {
-            return Err("You have Lost!".to_string());
-        }
-
-        if self.contains(self.winning) {
-            return Err("You have Won!".to_string());
-        }
-
-        Ok(self.board != temp)
+        self.board != temp
     }
 
     /// Compress a row/column

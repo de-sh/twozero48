@@ -1,6 +1,7 @@
+use clap::Clap;
 use std::io::{stdin, stdout, Write};
 use termion::{clear, color, event::Key, input::TermRead, raw::IntoRawMode};
-use twozero48::{Game, Move};
+use twozero48::{Game, Move, Status};
 
 const RESET: color::Fg<color::Reset> = color::Fg(color::Reset);
 
@@ -46,28 +47,24 @@ macro_rules! print_board {
     }};
 }
 
-// Initializes the game
-macro_rules! input {
-    ($msg: expr, $default: expr) => {{
-        let mut input = String::new();
-        print!("{}", $msg);
-        stdout().flush().unwrap();
-        stdin().read_line(&mut input).expect("Error reading input");
-        match input.trim().parse() {
-            Ok(1) | Err(_) => $default,
-            Ok(x) => x,
-        }
-    }};
+/// Define the arguments and the CLI option interface for twozero48.
+#[derive(Clap)]
+#[clap(version = "0.1.3", author = "Devdutt Shenoi <devdutt@outlook.in>")]
+struct Opts {
+    /// Game board's length & breadth, should be equal to 2 or greater in value,
+    /// else it will be automatically updated to the minimum value.
+    #[clap(short, long, default_value = "4")]
+    pub board_size: usize,
+    /// Game's winning point, should be atleast 4 or else a power of 2.
+    /// All other user provided options will be automatically updated to the minimum value.
+    #[clap(short, long, default_value = "2048")]
+    pub winning: usize,
 }
 
 fn main() {
-    // Collect values to initiate game with
-    let board_size = input!("Input board size(>=2, default: [4]): ", 4);
-    let winning = input!(
-            "Input winning number(>=4 and power of 2, default: [2048]): ",
-            2048);
-
-    let mut game = Game::new(board_size, winning);
+    // Collect command line arguments to initiate/configure a game
+    let opts = Opts::parse();
+    let mut game = Game::new(opts.board_size, opts.winning);
 
     let mut valid_move = true;
 
@@ -108,13 +105,24 @@ fn main() {
             _ => Move::Dont,
         };
 
-        valid_move = match game.mover(mov) {
-            Ok(v) => v,
-            Err(e) => {
+        valid_move = game.mover(mov);
+        match game.status() {
+            Status::On => continue,
+            x => {
                 print_board!(stdout, game.board());
-                writeln!(stdout, "{}{}{}", color::Fg(color::Red), e, RESET).unwrap();
+                writeln!(
+                    stdout,
+                    "{}{}{}",
+                    color::Fg(color::Red),
+                    match x {
+                        Status::Lost => "You have lost!",
+                        _ => "You have Won!",
+                    },
+                    RESET
+                )
+                .unwrap();
                 break;
             }
-        };
+        }
     }
 }
