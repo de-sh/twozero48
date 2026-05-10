@@ -99,6 +99,7 @@ pub struct Game {
     board: Board,
     board_size: usize,
     winning: Tile,
+    score: usize,
 }
 
 impl Game {
@@ -106,7 +107,7 @@ impl Game {
     /// board_size >= 2, defines board's length & breadth
     /// winning defines the Tile for the game to have been won
     pub fn new(board_size: usize, winning: Tile) -> Self {
-        // Ensure the board size is atleast 2
+        // Ensure the board size is at least 2
         let board_size = board_size.clamp(2, usize::MAX);
 
         // initialize an empty board of 0s
@@ -118,6 +119,7 @@ impl Game {
             board,
             board_size,
             winning,
+            score: 0,
         };
 
         // Spawns first random value
@@ -134,6 +136,11 @@ impl Game {
     /// Returns the Tile for winning
     pub fn winning(&self) -> Tile {
         self.winning
+    }
+
+    /// Returns the current score
+    pub fn score(&self) -> usize {
+        self.score
     }
 
     /// Performs the compression of board's values towards the left most column
@@ -163,10 +170,7 @@ impl Game {
     /// Performs the compression of board's values towards the top row
     fn move_up(&mut self) {
         for i in 0..self.board_size {
-            let mut v = vec![];
-            for j in 0..self.board_size {
-                v.push(self.board[j][i]);
-            }
+            let mut v = (0..self.board_size).map(|j| self.board[j][i]).collect();
 
             self.vec_compress(&mut v);
 
@@ -265,8 +269,8 @@ impl Game {
         self.board != temp
     }
 
-    /// Compress a row/column
-    fn vec_compress(&self, v: &mut Vec<Tile>) {
+    /// Compress a row/column, keeps track of score earned from merges
+    fn vec_compress(&mut self, v: &mut Vec<Tile>) {
         v.retain(|x| *x != Tile::Empty);
         let vl = v.len();
 
@@ -276,6 +280,7 @@ impl Game {
                     let promoted = v[i].promote();
                     v[i] = promoted;
                     v[i + 1] = Tile::Empty;
+                    self.score += promoted.score();
                 }
             }
         }
@@ -292,7 +297,7 @@ mod tests {
     #[test]
     fn vec_compress_no_merge() {
         let mut v = vec![Tile::Two, Tile::Four, Tile::Eight, Tile::Empty];
-        let game = Game::new(4, Tile::Four);
+        let mut game = Game::new(4, Tile::Four);
         game.vec_compress(&mut v);
         assert_eq!(v, vec![Tile::Two, Tile::Four, Tile::Eight, Tile::Empty]);
     }
@@ -300,7 +305,7 @@ mod tests {
     #[test]
     fn vec_compress_single_merge() {
         let mut v = vec![Tile::Two, Tile::Two, Tile::Empty, Tile::Empty];
-        let game = Game::new(4, Tile::Four);
+        let mut game = Game::new(4, Tile::Four);
         game.vec_compress(&mut v);
         assert_eq!(v, vec![Tile::Four, Tile::Empty, Tile::Empty, Tile::Empty]);
     }
@@ -308,7 +313,7 @@ mod tests {
     #[test]
     fn vec_compress_multiple_merges() {
         let mut v = vec![Tile::Four, Tile::Four, Tile::Four, Tile::Four];
-        let game = Game::new(4, Tile::Four);
+        let mut game = Game::new(4, Tile::Four);
         game.vec_compress(&mut v);
         assert_eq!(v, vec![Tile::Eight, Tile::Eight, Tile::Empty, Tile::Empty]);
     }
@@ -317,8 +322,24 @@ mod tests {
     fn vec_compress_no_double_merge() {
         // [2,2,2,0] → [4,2,0,0]: only first pair merges, score=4
         let mut v = vec![Tile::Two, Tile::Two, Tile::Two, Tile::Empty];
-        let game = Game::new(4, Tile::Four);
+        let mut game = Game::new(4, Tile::Four);
         game.vec_compress(&mut v);
         assert_eq!(v, vec![Tile::Four, Tile::Two, Tile::Empty, Tile::Empty]);
+    }
+
+    #[test]
+    fn score_starts_at_zero() {
+        let game = Game::new(4, Tile::TwoThousandFourEight);
+        assert_eq!(game.score(), 0);
+    }
+
+    #[test]
+    fn score_accumulates_after_merge() {
+        let mut game = Game::new(2, Tile::TwoThousandFourEight);
+        // Force a known board state: [2,2] / [0,0]
+        game.board[0] = vec![Tile::Two, Tile::Two];
+        game.board[1] = vec![Tile::Empty, Tile::Empty];
+        game.mover(Move::Left);
+        assert_eq!(game.score(), 4);
     }
 }

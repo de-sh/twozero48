@@ -112,7 +112,9 @@ fn main() {
 
         write!(
             stdout,
-            "Press A D W S or arrow keys to slide Left Right Up Down\n\rTo win, the board must contain the value: ",
+            "Score: {}\n\rPress A D W S or arrow keys to slide Left Right Up Down\n\rTo win, the board must contain the value: ",
+            game.score()
+
         )
         .unwrap();
 
