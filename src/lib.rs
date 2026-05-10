@@ -130,22 +130,18 @@ impl Game {
         }
     }
 
-    /// Sets a random location to the value 2 if currently 0
+    /// Sets a random empty cell to 2 (90%) or 4 (10%). No-op if board is full.
     fn spawn(&mut self) {
-        let mut rng = rand::rng();
-
-        loop {
-            let x: usize = rng.random_range(0..usize::MAX);
-
-            if self.board[x % self.board_size][(x / 10) % self.board_size] == 0 {
-                if x.is_multiple_of(5) {
-                    self.board[x % self.board_size][(x / 10) % self.board_size] = 4;
-                } else {
-                    self.board[x % self.board_size][(x / 10) % self.board_size] = 2;
-                }
-                break;
-            }
+        let empty: Vec<(usize, usize)> = (0..self.board_size)
+            .flat_map(|r| (0..self.board_size).map(move |c| (r, c)))
+            .filter(|&(r, c)| self.board[r][c] == 0)
+            .collect();
+        if empty.is_empty() {
+            return;
         }
+        let mut rng = rand::rng();
+        let (r, c) = empty[rng.random_range(0..empty.len())];
+        self.board[r][c] = if rng.random_bool(0.1) { 4 } else { 2 };
     }
 
     /// To refresh and return a reference to the game board after a valid move
