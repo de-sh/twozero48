@@ -54,7 +54,10 @@ macro_rules! print_board {
 
 /// Define the arguments and the CLI option interface for twozero48.
 #[derive(Parser)]
-#[clap(version = "0.1.3", author = "Devdutt Shenoi <devdutt@outlook.in>")]
+#[clap(
+    version = clap::crate_version!(),
+    author = "Devdutt Shenoi <devdutt@outlook.in>"
+)]
 struct Opts {
     /// Game board's length & breadth, should be equal to 2 or greater in value,
     /// else it will be automatically updated to the minimum value.

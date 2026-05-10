@@ -1,6 +1,6 @@
 [package]
 name = "twozero48"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Devdutt Shenoi <devdutt@outlook.in>"]
 edition = "2024"
 license = "MIT"
@@ -8,7 +8,7 @@ repository = "https://github.com/de-sh/twozero48"
 description = "A CLI implementation of 2048, in rust"
 
 [dependencies]
-clap = { version = "4.6", features = ["derive"] }
+clap = { version = "4.6", features = ["derive", "cargo"] }
 rand = "0.10"
 termion = "1"
 
