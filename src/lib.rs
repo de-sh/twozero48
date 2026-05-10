@@ -46,7 +46,7 @@ impl Game {
             .clamp(4, usize::MAX);
 
         // initialize an empty board of 0s
-        let empty = vec![0].repeat(board_size);
+        let empty = [0].repeat(board_size);
         let mut board = vec![];
         board.resize(board_size, empty);
 
@@ -106,8 +106,8 @@ impl Game {
 
             self.vec_compress(&mut v);
 
-            for j in 0..self.board_size {
-                self.board[j][i] = v[j];
+            for (j, tile) in v.iter().enumerate().take(self.board_size) {
+                self.board[j][i] = *tile;
             }
         }
     }
@@ -124,21 +124,21 @@ impl Game {
             self.vec_compress(&mut v);
             v.reverse();
 
-            for j in 0..self.board_size {
-                self.board[j][i] = v[j];
+            for (j, tile) in v.iter().enumerate().take(self.board_size) {
+                self.board[j][i] = *tile;
             }
         }
     }
 
     /// Sets a random location to the value 2 if currently 0
     fn spawn(&mut self) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         loop {
-            let x: usize = rng.gen();
+            let x: usize = rng.random_range(0..usize::MAX);
 
             if self.board[x % self.board_size][(x / 10) % self.board_size] == 0 {
-                if x % 5 == 0 {
+                if x.is_multiple_of(5) {
                     self.board[x % self.board_size][(x / 10) % self.board_size] = 4;
                 } else {
                     self.board[x % self.board_size][(x / 10) % self.board_size] = 2;
@@ -161,15 +161,11 @@ impl Game {
 
         for i in 0..self.board_size {
             for j in 0..self.board_size {
-                if i != self.board_size - 1 {
-                    if self.board[i][j] == self.board[i + 1][j] {
-                        return false;
-                    }
+                if i != self.board_size - 1 && self.board[i][j] == self.board[i + 1][j] {
+                    return false;
                 }
-                if j != self.board_size - 1 {
-                    if self.board[i][j] == self.board[i][j + 1] {
-                        return false;
-                    }
+                if j != self.board_size - 1 && self.board[i][j] == self.board[i][j + 1] {
+                    return false;
                 }
             }
         }
@@ -179,9 +175,7 @@ impl Game {
 
     /// Check if board contains value x
     fn contains(&self, x: usize) -> bool {
-        self.board
-            .iter()
-            .fold(false, |t, v| t || v.iter().fold(false, |u, w| u || *w == x))
+        self.board.iter().any(|v| v.contains(&x))
     }
 
     pub fn status(&self) -> Status {

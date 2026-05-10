@@ -1,5 +1,6 @@
-use clap::Clap;
-use std::io::{stdin, stdout, Write};
+use std::io::{Write, stdin, stdout};
+
+use clap::Parser;
 use termion::{clear, color, event::Key, input::TermRead, raw::IntoRawMode};
 use twozero48::{Game, Move, Status};
 
@@ -48,7 +49,7 @@ macro_rules! print_board {
 }
 
 /// Define the arguments and the CLI option interface for twozero48.
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(version = "0.1.3", author = "Devdutt Shenoi <devdutt@outlook.in>")]
 struct Opts {
     /// Game board's length & breadth, should be equal to 2 or greater in value,
