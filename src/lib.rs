@@ -284,3 +284,41 @@ impl Game {
         v.resize(self.board_size, Tile::Empty);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vec_compress_no_merge() {
+        let mut v = vec![Tile::Two, Tile::Four, Tile::Eight, Tile::Empty];
+        let game = Game::new(4, Tile::Four);
+        game.vec_compress(&mut v);
+        assert_eq!(v, vec![Tile::Two, Tile::Four, Tile::Eight, Tile::Empty]);
+    }
+
+    #[test]
+    fn vec_compress_single_merge() {
+        let mut v = vec![Tile::Two, Tile::Two, Tile::Empty, Tile::Empty];
+        let game = Game::new(4, Tile::Four);
+        game.vec_compress(&mut v);
+        assert_eq!(v, vec![Tile::Four, Tile::Empty, Tile::Empty, Tile::Empty]);
+    }
+
+    #[test]
+    fn vec_compress_multiple_merges() {
+        let mut v = vec![Tile::Four, Tile::Four, Tile::Four, Tile::Four];
+        let game = Game::new(4, Tile::Four);
+        game.vec_compress(&mut v);
+        assert_eq!(v, vec![Tile::Eight, Tile::Eight, Tile::Empty, Tile::Empty]);
+    }
+
+    #[test]
+    fn vec_compress_no_double_merge() {
+        // [2,2,2,0] → [4,2,0,0]: only first pair merges, score=4
+        let mut v = vec![Tile::Two, Tile::Two, Tile::Two, Tile::Empty];
+        let game = Game::new(4, Tile::Four);
+        game.vec_compress(&mut v);
+        assert_eq!(v, vec![Tile::Four, Tile::Two, Tile::Empty, Tile::Empty]);
+    }
+}
