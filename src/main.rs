@@ -64,7 +64,6 @@ struct Opts {
     #[clap(short, long, default_value = "4")]
     pub board_size: usize,
     /// Game's winning tile value, only 128, 256, 512, 1024, 2048, and 4096 are supported values.
-    /// All other user provided options will be automatically updated to the minimum value.
     #[clap(short, long, default_value = "2048", value_parser = parse_winning)]
     pub winning: Tile,
 }
