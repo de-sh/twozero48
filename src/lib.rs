@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use rand::prelude::*;
 
 /// Used to depict user choice, an input to the [`Game`] API
@@ -24,29 +26,91 @@ pub enum Status {
     On,
 }
 
-type Board = Vec<Vec<usize>>;
+/// Represents a tile(value) on the game board.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Tile {
+    #[default]
+    Empty,
+    Two,
+    Four,
+    Eight,
+    Sixteen,
+    ThirtyTwo,
+    SixtyFour,
+    OneHundredTwentyEight,
+    TwoHundredFiftySix,
+    FiveHundredTwelve,
+    OneThousandTwoFour,
+    TwoThousandFourEight,
+    FourHundredNinetySix,
+}
+
+impl Tile {
+    /// Returns the score value of the tile.
+    fn score(&self) -> usize {
+        match self {
+            Tile::Empty => 0,
+            Tile::Two => 2,
+            Tile::Four => 4,
+            Tile::Eight => 8,
+            Tile::Sixteen => 16,
+            Tile::ThirtyTwo => 32,
+            Tile::SixtyFour => 64,
+            Tile::OneHundredTwentyEight => 128,
+            Tile::TwoHundredFiftySix => 256,
+            Tile::FiveHundredTwelve => 512,
+            Tile::OneThousandTwoFour => 1024,
+            Tile::TwoThousandFourEight => 2048,
+            Tile::FourHundredNinetySix => 4096,
+        }
+    }
+
+    /// Promotes the tile to the next value, e.g. `Two` becomes `Four`, `Four` becomes `Eight`, etc.
+    /// Empty and 4096 tiles don't change as they are upper limits.
+    fn promote(&self) -> Self {
+        match self {
+            Tile::Empty => Tile::Empty,
+            Tile::Two => Tile::Four,
+            Tile::Four => Tile::Eight,
+            Tile::Eight => Tile::Sixteen,
+            Tile::Sixteen => Tile::ThirtyTwo,
+            Tile::ThirtyTwo => Tile::SixtyFour,
+            Tile::SixtyFour => Tile::OneHundredTwentyEight,
+            Tile::OneHundredTwentyEight => Tile::TwoHundredFiftySix,
+            Tile::TwoHundredFiftySix => Tile::FiveHundredTwelve,
+            Tile::FiveHundredTwelve => Tile::OneThousandTwoFour,
+            Tile::OneThousandTwoFour => Tile::TwoThousandFourEight,
+            Tile::TwoThousandFourEight => Tile::FourHundredNinetySix,
+            Tile::FourHundredNinetySix => Tile::FourHundredNinetySix,
+        }
+    }
+}
+
+impl Display for Tile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.score())
+    }
+}
+
+type Board = Vec<Vec<Tile>>;
 
 /// An object that models the board to play 2048 on and defines the rules for the game
 pub struct Game {
     board: Board,
     board_size: usize,
-    winning: usize,
+    winning: Tile,
 }
 
 impl Game {
     /// Constructs a board to play the game
     /// board_size >= 2, defines board's length & breadth
-    /// winning >= 4 and a power of 2, defines the value for game to havae been won
-    pub fn new(board_size: usize, winning: usize) -> Self {
+    /// winning defines the Tile for the game to have been won
+    pub fn new(board_size: usize, winning: Tile) -> Self {
         // Ensure the board size is atleast 2
         let board_size = board_size.clamp(2, usize::MAX);
-        // Ensure the winning point is a power of two and >= 4, in order to be reached within game logic
-        let winning = 2usize
-            .pow((winning as f32).log2().abs() as u32)
-            .clamp(4, usize::MAX);
 
         // initialize an empty board of 0s
-        let empty = [0].repeat(board_size);
+        let empty = [Tile::Empty].repeat(board_size);
         let mut board = vec![];
         board.resize(board_size, empty);
 
@@ -67,8 +131,8 @@ impl Game {
         &self.board
     }
 
-    /// Returns the value for winning
-    pub fn winning(&self) -> usize {
+    /// Returns the Tile for winning
+    pub fn winning(&self) -> Tile {
         self.winning
     }
 
@@ -115,10 +179,7 @@ impl Game {
     /// Performs the compression of board's values towards the bottom row
     fn move_down(&mut self) {
         for i in 0..self.board_size {
-            let mut v = vec![];
-            for j in 0..self.board_size {
-                v.push(self.board[j][i]);
-            }
+            let mut v: Vec<Tile> = (0..self.board_size).map(|j| self.board[j][i]).collect();
 
             v.reverse();
             self.vec_compress(&mut v);
@@ -134,14 +195,18 @@ impl Game {
     fn spawn(&mut self) {
         let empty: Vec<(usize, usize)> = (0..self.board_size)
             .flat_map(|r| (0..self.board_size).map(move |c| (r, c)))
-            .filter(|&(r, c)| self.board[r][c] == 0)
+            .filter(|&(r, c)| self.board[r][c] == Tile::Empty)
             .collect();
         if empty.is_empty() {
             return;
         }
         let mut rng = rand::rng();
         let (r, c) = empty[rng.random_range(0..empty.len())];
-        self.board[r][c] = if rng.random_bool(0.1) { 4 } else { 2 };
+        self.board[r][c] = if rng.random_bool(0.1) {
+            Tile::Four
+        } else {
+            Tile::Two
+        };
     }
 
     /// To refresh and return a reference to the game board after a valid move
@@ -151,7 +216,7 @@ impl Game {
 
     /// Verify if board is filled and no valid moves left
     fn is_locked(&self) -> bool {
-        if self.contains(0) {
+        if self.contains(Tile::Empty) {
             return false;
         }
 
@@ -170,7 +235,7 @@ impl Game {
     }
 
     /// Check if board contains value x
-    fn contains(&self, x: usize) -> bool {
+    fn contains(&self, x: Tile) -> bool {
         self.board.iter().any(|v| v.contains(&x))
     }
 
@@ -201,20 +266,21 @@ impl Game {
     }
 
     /// Compress a row/column
-    fn vec_compress(&self, v: &mut Vec<usize>) {
-        v.retain(|x| *x != 0);
+    fn vec_compress(&self, v: &mut Vec<Tile>) {
+        v.retain(|x| *x != Tile::Empty);
         let vl = v.len();
 
         if vl > 1 {
             for i in 0..vl - 1 {
                 if v[i] == v[i + 1] {
-                    v[i] *= 2;
-                    v[i + 1] = 0;
+                    let promoted = v[i].promote();
+                    v[i] = promoted;
+                    v[i + 1] = Tile::Empty;
                 }
             }
         }
 
-        v.retain(|x| *x != 0);
-        v.resize(self.board_size, 0);
+        v.retain(|x| *x != Tile::Empty);
+        v.resize(self.board_size, Tile::Empty);
     }
 }

@@ -2,7 +2,7 @@ use std::io::{Write, stdin, stdout};
 
 use clap::Parser;
 use termion::{clear, color, event::Key, input::TermRead, raw::IntoRawMode};
-use twozero48::{Game, Move, Status};
+use twozero48::{Game, Move, Status, Tile};
 
 const RESET: color::Fg<color::Reset> = color::Fg(color::Reset);
 
@@ -18,17 +18,21 @@ macro_rules! print_block {
 macro_rules! color_block {
     ($block: expr, $stream: expr) => {
         match $block {
-            2 => print_block!($stream, color::Fg(color::Blue), $block),
-            4 => print_block!($stream, color::Fg(color::LightBlue), $block),
-            8 => print_block!($stream, color::Fg(color::Cyan), $block),
-            16 => print_block!($stream, color::Fg(color::LightCyan), $block),
-            32 => print_block!($stream, color::Fg(color::Green), $block),
-            64 => print_block!($stream, color::Fg(color::LightGreen), $block),
-            128 => print_block!($stream, color::Fg(color::Magenta), $block),
-            256 => print_block!($stream, color::Fg(color::LightMagenta), $block),
-            512 => print_block!($stream, color::Fg(color::Yellow), $block),
-            1024 => print_block!($stream, color::Fg(color::LightYellow), $block),
-            2048 => print_block!($stream, color::Fg(color::LightRed), $block),
+            Tile::Two => print_block!($stream, color::Fg(color::Blue), $block),
+            Tile::Four => print_block!($stream, color::Fg(color::LightBlue), $block),
+            Tile::Eight => print_block!($stream, color::Fg(color::Cyan), $block),
+            Tile::Sixteen => print_block!($stream, color::Fg(color::LightCyan), $block),
+            Tile::ThirtyTwo => print_block!($stream, color::Fg(color::Green), $block),
+            Tile::SixtyFour => print_block!($stream, color::Fg(color::LightGreen), $block),
+            Tile::OneHundredTwentyEight => print_block!($stream, color::Fg(color::Magenta), $block),
+            Tile::TwoHundredFiftySix => {
+                print_block!($stream, color::Fg(color::LightMagenta), $block)
+            }
+            Tile::FiveHundredTwelve => print_block!($stream, color::Fg(color::Yellow), $block),
+            Tile::OneThousandTwoFour => {
+                print_block!($stream, color::Fg(color::LightYellow), $block)
+            }
+            Tile::TwoThousandFourEight => print_block!($stream, color::Fg(color::LightRed), $block),
             _ => write!($stream, "{}\t", $block).unwrap(),
         }
     };
@@ -56,10 +60,27 @@ struct Opts {
     /// else it will be automatically updated to the minimum value.
     #[clap(short, long, default_value = "4")]
     pub board_size: usize,
-    /// Game's winning point, should be atleast 4 or else a power of 2.
+    /// Game's winning tile value, only 128, 256, 512, 1024, 2048, and 4096 are supported values.
     /// All other user provided options will be automatically updated to the minimum value.
-    #[clap(short, long, default_value = "2048")]
-    pub winning: usize,
+    #[clap(short, long, default_value = "2048", value_parser = parse_winning)]
+    pub winning: Tile,
+}
+
+fn parse_winning(score: &str) -> Result<Tile, String> {
+    let score: usize = score
+        .parse()
+        .map_err(|_| "Only 128, 256, 512, 1024, 2048, and 4096 are supported values")?;
+    match score {
+        128 => Ok(Tile::OneHundredTwentyEight),
+        256 => Ok(Tile::TwoHundredFiftySix),
+        512 => Ok(Tile::FiveHundredTwelve),
+        1024 => Ok(Tile::OneThousandTwoFour),
+        2048 => Ok(Tile::TwoThousandFourEight),
+        4096 => Ok(Tile::FourHundredNinetySix),
+        _ => Err(format!(
+            "{score} is not a supported winning value. Only 128, 256, 512, 1024, 2048, and 4096 are supported values."
+        )),
+    }
 }
 
 fn main() {
