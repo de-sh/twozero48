@@ -114,9 +114,9 @@ fn main() {
 
         write!(
             stdout,
-            "Score: {}\n\rPress A D W S or arrow keys to slide Left Right Up Down\n\rTo win, the board must contain the value: ",
-            game.score()
-
+            "Score: {} Largest Tile: {}\n\rPress A D W S or arrow keys to slide Left Right Up Down\n\rTo win, the board must contain the value: ",
+            game.score(),
+            game.largest_tile()
         )
         .unwrap();
 

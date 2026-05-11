@@ -213,6 +213,16 @@ impl Game {
         };
     }
 
+    /// Returns the current largest tile on the board
+    pub fn largest_tile(&self) -> Tile {
+        self.board()
+            .iter()
+            .flatten()
+            .copied()
+            .max()
+            .unwrap_or(Tile::Empty)
+    }
+
     /// To refresh and return a reference to the game board after a valid move
     pub fn refresh(&mut self) {
         self.spawn();
@@ -341,5 +351,12 @@ mod tests {
         game.board[1] = vec![Tile::Empty, Tile::Empty];
         game.mover(Move::Left);
         assert_eq!(game.score(), 4);
+    }
+
+    #[test]
+    fn current_largest_tile_on_board() {
+        let mut game = Game::new(4, Tile::TwoThousandFourtyEight);
+        game.board[0][0] = Tile::SixtyFour;
+        assert_eq!(game.largest_tile(), Tile::SixtyFour);
     }
 }
