@@ -4,7 +4,11 @@ use clap::Parser;
 use termion::{clear, color, event::Key, input::TermRead, raw::IntoRawMode};
 use twozero48::{Game, Move, Status, Tile};
 
+use crate::milestones::MilestoneChecker;
+
 const RESET: color::Fg<color::Reset> = color::Fg(color::Reset);
+
+mod milestones;
 
 // Macros for DRY
 /// Prints a single block
@@ -91,6 +95,7 @@ fn main() {
     // Collect command line arguments to initiate/configure a game
     let opts = Opts::parse();
     let mut game = Game::new(opts.board_size, opts.winning);
+    let mut milestone_checker = MilestoneChecker::new(Tile::Empty);
 
     let mut valid_move = true;
 
@@ -112,11 +117,23 @@ fn main() {
 
         print_board!(stdout, game.board());
 
+        let largest_tile = game.largest_tile();
+        if milestone_checker.is_milestone(largest_tile) {
+            write!(
+                stdout,
+                "\n\r{}MILESTONE REACHED: {} points!{}\n\n\r",
+                color::Fg(color::Green),
+                game.score(),
+                RESET
+            )
+            .unwrap();
+        }
+
         write!(
             stdout,
             "Score: {} Largest Tile: {}\n\rPress A D W S or arrow keys to slide Left Right Up Down\n\rTo win, the board must contain the value: ",
             game.score(),
-            game.largest_tile()
+            largest_tile
         )
         .unwrap();
 
