@@ -3,6 +3,7 @@ use std::fmt::Display;
 use rand::prelude::*;
 
 /// Used to depict user choice, an input to the [`Game`] API
+#[derive(Clone, Copy)]
 pub enum Move {
     /// Executes leftward compression of board elements
     Left,
