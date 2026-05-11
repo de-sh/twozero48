@@ -29,10 +29,12 @@ macro_rules! color_block {
                 print_block!($stream, color::Fg(color::LightMagenta), $block)
             }
             Tile::FiveHundredTwelve => print_block!($stream, color::Fg(color::Yellow), $block),
-            Tile::OneThousandTwoFour => {
+            Tile::OneThousandTwentyFour => {
                 print_block!($stream, color::Fg(color::LightYellow), $block)
             }
-            Tile::TwoThousandFourEight => print_block!($stream, color::Fg(color::LightRed), $block),
+            Tile::TwoThousandFourtyEight => {
+                print_block!($stream, color::Fg(color::LightRed), $block)
+            }
             _ => write!($stream, "{}\t", $block).unwrap(),
         }
     };
@@ -76,8 +78,8 @@ fn parse_winning(score: &str) -> Result<Tile, String> {
         128 => Ok(Tile::OneHundredTwentyEight),
         256 => Ok(Tile::TwoHundredFiftySix),
         512 => Ok(Tile::FiveHundredTwelve),
-        1024 => Ok(Tile::OneThousandTwoFour),
-        2048 => Ok(Tile::TwoThousandFourEight),
+        1024 => Ok(Tile::OneThousandTwentyFour),
+        2048 => Ok(Tile::TwoThousandFourtyEight),
         4096 => Ok(Tile::FourHundredNinetySix),
         _ => Err(format!(
             "{score} is not a supported winning value. Only 128, 256, 512, 1024, 2048, and 4096 are supported values."

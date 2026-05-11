@@ -40,8 +40,8 @@ pub enum Tile {
     OneHundredTwentyEight,
     TwoHundredFiftySix,
     FiveHundredTwelve,
-    OneThousandTwoFour,
-    TwoThousandFourEight,
+    OneThousandTwentyFour,
+    TwoThousandFourtyEight,
     FourHundredNinetySix,
 }
 
@@ -59,8 +59,8 @@ impl Tile {
             Tile::OneHundredTwentyEight => 128,
             Tile::TwoHundredFiftySix => 256,
             Tile::FiveHundredTwelve => 512,
-            Tile::OneThousandTwoFour => 1024,
-            Tile::TwoThousandFourEight => 2048,
+            Tile::OneThousandTwentyFour => 1024,
+            Tile::TwoThousandFourtyEight => 2048,
             Tile::FourHundredNinetySix => 4096,
         }
     }
@@ -78,9 +78,9 @@ impl Tile {
             Tile::SixtyFour => Tile::OneHundredTwentyEight,
             Tile::OneHundredTwentyEight => Tile::TwoHundredFiftySix,
             Tile::TwoHundredFiftySix => Tile::FiveHundredTwelve,
-            Tile::FiveHundredTwelve => Tile::OneThousandTwoFour,
-            Tile::OneThousandTwoFour => Tile::TwoThousandFourEight,
-            Tile::TwoThousandFourEight => Tile::FourHundredNinetySix,
+            Tile::FiveHundredTwelve => Tile::OneThousandTwentyFour,
+            Tile::OneThousandTwentyFour => Tile::TwoThousandFourtyEight,
+            Tile::TwoThousandFourtyEight => Tile::FourHundredNinetySix,
             Tile::FourHundredNinetySix => Tile::FourHundredNinetySix,
         }
     }
@@ -329,13 +329,13 @@ mod tests {
 
     #[test]
     fn score_starts_at_zero() {
-        let game = Game::new(4, Tile::TwoThousandFourEight);
+        let game = Game::new(4, Tile::TwoThousandFourtyEight);
         assert_eq!(game.score(), 0);
     }
 
     #[test]
     fn score_accumulates_after_merge() {
-        let mut game = Game::new(2, Tile::TwoThousandFourEight);
+        let mut game = Game::new(2, Tile::TwoThousandFourtyEight);
         // Force a known board state: [2,2] / [0,0]
         game.board[0] = vec![Tile::Two, Tile::Two];
         game.board[1] = vec![Tile::Empty, Tile::Empty];
