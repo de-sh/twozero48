@@ -223,7 +223,7 @@ impl Game {
             .unwrap_or(Tile::Empty)
     }
 
-    /// To refresh and return a reference to the game board after a valid move
+    /// Refreshes(spawns new tile on an empty cell) the board after a valid move
     pub fn refresh(&mut self) {
         self.spawn();
     }
