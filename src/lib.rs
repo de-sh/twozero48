@@ -27,63 +27,41 @@ pub enum Status {
     On,
 }
 
-/// Represents a tile(value) on the game board.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Tile {
-    #[default]
-    Empty,
-    Two,
-    Four,
-    Eight,
-    Sixteen,
-    ThirtyTwo,
-    SixtyFour,
-    OneHundredTwentyEight,
-    TwoHundredFiftySix,
-    FiveHundredTwelve,
-    OneThousandTwentyFour,
-    TwoThousandFourtyEight,
-    FourHundredNinetySix,
+/// Represents a tile on the game board. exp is the exponent of 2 that the tile represents.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Tile {
+    exp: u32,
 }
 
 impl Tile {
-    /// Returns the score value of the tile.
-    fn score(&self) -> usize {
-        match self {
-            Tile::Empty => 0,
-            Tile::Two => 2,
-            Tile::Four => 4,
-            Tile::Eight => 8,
-            Tile::Sixteen => 16,
-            Tile::ThirtyTwo => 32,
-            Tile::SixtyFour => 64,
-            Tile::OneHundredTwentyEight => 128,
-            Tile::TwoHundredFiftySix => 256,
-            Tile::FiveHundredTwelve => 512,
-            Tile::OneThousandTwentyFour => 1024,
-            Tile::TwoThousandFourtyEight => 2048,
-            Tile::FourHundredNinetySix => 4096,
-        }
+    pub const EMPTY: Tile = Tile { exp: 0 };
+    pub const TWO: Tile = Tile { exp: 1 };
+    pub const FOUR: Tile = Tile { exp: 2 };
+    pub const ONE_TWO_EIGHT: Tile = Tile { exp: 7 };
+
+    pub const fn new(exp: u32) -> Self {
+        Tile { exp }
     }
 
-    /// Promotes the tile to the next value, e.g. `Two` becomes `Four`, `Four` becomes `Eight`, etc.
-    /// Empty and 4096 tiles don't change as they are upper limits.
-    fn promote(&self) -> Self {
-        match self {
-            Tile::Empty => Tile::Empty,
-            Tile::Two => Tile::Four,
-            Tile::Four => Tile::Eight,
-            Tile::Eight => Tile::Sixteen,
-            Tile::Sixteen => Tile::ThirtyTwo,
-            Tile::ThirtyTwo => Tile::SixtyFour,
-            Tile::SixtyFour => Tile::OneHundredTwentyEight,
-            Tile::OneHundredTwentyEight => Tile::TwoHundredFiftySix,
-            Tile::TwoHundredFiftySix => Tile::FiveHundredTwelve,
-            Tile::FiveHundredTwelve => Tile::OneThousandTwentyFour,
-            Tile::OneThousandTwentyFour => Tile::TwoThousandFourtyEight,
-            Tile::TwoThousandFourtyEight => Tile::FourHundredNinetySix,
-            Tile::FourHundredNinetySix => Tile::FourHundredNinetySix,
+    /// Returns the score value of the tile.
+    pub fn score(&self) -> usize {
+        // Score is 0 for empty tiles
+        if self.exp == 0 {
+            return 0;
         }
+
+        // Score is 2^exp for other tiles
+        1 << self.exp
+    }
+
+    /// Returns the exponent of the tile.
+    pub fn exponent(&self) -> u32 {
+        self.exp
+    }
+
+    /// Doubles the tile value.
+    fn promote(self) -> Self {
+        Tile { exp: self.exp + 1 }
     }
 }
 
@@ -110,11 +88,7 @@ impl Game {
     pub fn new(board_size: usize, winning: Tile) -> Self {
         // Ensure the board size is at least 2
         let board_size = board_size.clamp(2, usize::MAX);
-
-        // initialize an empty board of 0s
-        let empty = [Tile::Empty].repeat(board_size);
-        let mut board = vec![];
-        board.resize(board_size, empty);
+        let board = vec![vec![Tile::EMPTY; board_size]; board_size];
 
         let mut init = Self {
             board,
@@ -200,7 +174,7 @@ impl Game {
     fn spawn(&mut self) {
         let empty: Vec<(usize, usize)> = (0..self.board_size)
             .flat_map(|r| (0..self.board_size).map(move |c| (r, c)))
-            .filter(|&(r, c)| self.board[r][c] == Tile::Empty)
+            .filter(|&(r, c)| self.board[r][c] == Tile::EMPTY)
             .collect();
         if empty.is_empty() {
             return;
@@ -208,9 +182,9 @@ impl Game {
         let mut rng = rand::rng();
         let (r, c) = empty[rng.random_range(0..empty.len())];
         self.board[r][c] = if rng.random_bool(0.1) {
-            Tile::Four
+            Tile::FOUR
         } else {
-            Tile::Two
+            Tile::TWO
         };
     }
 
@@ -221,7 +195,7 @@ impl Game {
             .flatten()
             .copied()
             .max()
-            .unwrap_or(Tile::Empty)
+            .unwrap_or(Tile::EMPTY)
     }
 
     /// Refreshes(spawns new tile on an empty cell) the board after a valid move
@@ -231,7 +205,7 @@ impl Game {
 
     /// Verify if board is filled and no valid moves left
     fn is_locked(&self) -> bool {
-        if self.contains(Tile::Empty) {
+        if self.contains(Tile::EMPTY) {
             return false;
         }
 
@@ -282,7 +256,7 @@ impl Game {
 
     /// Compress a row/column, keeps track of score earned from merges
     fn vec_compress(&mut self, v: &mut Vec<Tile>) {
-        v.retain(|x| *x != Tile::Empty);
+        v.retain(|x| *x != Tile::EMPTY);
         let vl = v.len();
 
         if vl > 1 {
@@ -290,14 +264,14 @@ impl Game {
                 if v[i] == v[i + 1] {
                     let promoted = v[i].promote();
                     v[i] = promoted;
-                    v[i + 1] = Tile::Empty;
+                    v[i + 1] = Tile::EMPTY;
                     self.score += promoted.score();
                 }
             }
         }
 
-        v.retain(|x| *x != Tile::Empty);
-        v.resize(self.board_size, Tile::Empty);
+        v.retain(|x| *x != Tile::EMPTY);
+        v.resize(self.board_size, Tile::EMPTY);
     }
 }
 
@@ -307,57 +281,60 @@ mod tests {
 
     #[test]
     fn vec_compress_no_merge() {
-        let mut v = vec![Tile::Two, Tile::Four, Tile::Eight, Tile::Empty];
-        let mut game = Game::new(4, Tile::Four);
+        let mut v = vec![Tile::TWO, Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY];
+        let mut game = Game::new(4, Tile::FOUR);
         game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::Two, Tile::Four, Tile::Eight, Tile::Empty]);
+        assert_eq!(v, vec![Tile::TWO, Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY]);
     }
 
     #[test]
     fn vec_compress_single_merge() {
-        let mut v = vec![Tile::Two, Tile::Two, Tile::Empty, Tile::Empty];
-        let mut game = Game::new(4, Tile::Four);
+        let mut v = vec![Tile::TWO, Tile::TWO, Tile::EMPTY, Tile::EMPTY];
+        let mut game = Game::new(4, Tile::FOUR);
         game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::Four, Tile::Empty, Tile::Empty, Tile::Empty]);
+        assert_eq!(v, vec![Tile::FOUR, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY]);
     }
 
     #[test]
     fn vec_compress_multiple_merges() {
-        let mut v = vec![Tile::Four, Tile::Four, Tile::Four, Tile::Four];
-        let mut game = Game::new(4, Tile::Four);
+        let mut v = vec![Tile::FOUR, Tile::FOUR, Tile::FOUR, Tile::FOUR];
+        let mut game = Game::new(4, Tile::FOUR);
         game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::Eight, Tile::Eight, Tile::Empty, Tile::Empty]);
+        assert_eq!(
+            v,
+            vec![Tile { exp: 3 }, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY]
+        );
     }
 
     #[test]
     fn vec_compress_no_double_merge() {
         // [2,2,2,0] → [4,2,0,0]: only first pair merges, score=4
-        let mut v = vec![Tile::Two, Tile::Two, Tile::Two, Tile::Empty];
-        let mut game = Game::new(4, Tile::Four);
+        let mut v = vec![Tile::TWO, Tile::TWO, Tile::TWO, Tile::EMPTY];
+        let mut game = Game::new(4, Tile::FOUR);
         game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::Four, Tile::Two, Tile::Empty, Tile::Empty]);
+        assert_eq!(v, vec![Tile::FOUR, Tile::TWO, Tile::EMPTY, Tile::EMPTY]);
     }
 
     #[test]
     fn score_starts_at_zero() {
-        let game = Game::new(4, Tile::TwoThousandFourtyEight);
+        let game = Game::new(4, Tile { exp: 11 });
         assert_eq!(game.score(), 0);
     }
 
     #[test]
     fn score_accumulates_after_merge() {
-        let mut game = Game::new(2, Tile::TwoThousandFourtyEight);
+        let mut game = Game::new(2, Tile { exp: 11 });
         // Force a known board state: [2,2] / [0,0]
-        game.board[0] = vec![Tile::Two, Tile::Two];
-        game.board[1] = vec![Tile::Empty, Tile::Empty];
+        game.board[0] = vec![Tile::TWO, Tile::TWO];
+        game.board[1] = vec![Tile::EMPTY, Tile::EMPTY];
         game.mover(Move::Left);
         assert_eq!(game.score(), 4);
     }
 
     #[test]
     fn current_largest_tile_on_board() {
-        let mut game = Game::new(4, Tile::TwoThousandFourtyEight);
-        game.board[0][0] = Tile::SixtyFour;
-        assert_eq!(game.largest_tile(), Tile::SixtyFour);
+        let mut game = Game::new(4, Tile { exp: 11 });
+        game.board[0][0] = Tile { exp: 6 };
+        assert_eq!(game.largest_tile(), Tile { exp: 6 });
     }
 }

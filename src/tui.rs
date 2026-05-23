@@ -130,7 +130,7 @@ fn changed_cells(old: &[Vec<Tile>], new: &[Vec<Tile>]) -> HashSet<(usize, usize)
     let mut set = HashSet::new();
     for (r, (old_row, new_row)) in old.iter().zip(new.iter()).enumerate() {
         for (c, (&ov, &nv)) in old_row.iter().zip(new_row.iter()).enumerate() {
-            if nv != ov && nv != Tile::Empty {
+            if nv != ov && nv != Tile::EMPTY {
                 set.insert((r, c));
             }
         }
@@ -140,20 +140,21 @@ fn changed_cells(old: &[Vec<Tile>], new: &[Vec<Tile>]) -> HashSet<(usize, usize)
 
 /// Returns the [`Color`] of the tile(used for rendering)
 fn tile_color(tile: Tile) -> Color {
-    match tile {
-        Tile::Empty => Color::Rgb(180, 180, 180),
-        Tile::Two => Color::Rgb(255, 220, 80),
-        Tile::Four => Color::Rgb(255, 165, 30),
-        Tile::Eight => Color::Rgb(255, 100, 20),
-        Tile::Sixteen => Color::Rgb(240, 50, 50),
-        Tile::ThirtyTwo => Color::Rgb(200, 20, 120),
-        Tile::SixtyFour => Color::Rgb(150, 0, 200),
-        Tile::OneHundredTwentyEight => Color::Rgb(80, 20, 220),
-        Tile::TwoHundredFiftySix => Color::Rgb(20, 100, 255),
-        Tile::FiveHundredTwelve => Color::Rgb(0, 200, 220),
-        Tile::OneThousandTwentyFour => Color::Rgb(20, 220, 120),
-        Tile::TwoThousandFourtyEight => Color::Rgb(255, 215, 0),
-        Tile::FourHundredNinetySix => Color::Rgb(255, 255, 255),
+    match tile.exponent() {
+        0 => Color::Rgb(180, 180, 180),
+        1 => Color::Rgb(255, 220, 80),
+        2 => Color::Rgb(255, 165, 30),
+        3 => Color::Rgb(255, 100, 20),
+        4 => Color::Rgb(240, 50, 50),
+        5 => Color::Rgb(200, 20, 120),
+        6 => Color::Rgb(150, 0, 200),
+        7 => Color::Rgb(80, 20, 220),
+        8 => Color::Rgb(20, 100, 255),
+        9 => Color::Rgb(0, 200, 220),
+        10 => Color::Rgb(20, 220, 120),
+        11 => Color::Rgb(255, 215, 0),
+        12 => Color::Rgb(255, 255, 255),
+        _ => Color::Rgb(200, 200, 200),
     }
 }
 
@@ -275,9 +276,10 @@ impl TermGuard {
                         }
 
                         let cell_area = Rect::new(cx, cy, CELL_W, CELL_H);
-                        let is_flash = flash.contains(&(row_i, col_i)) && val != Tile::Empty;
+                        let is_empty = val == Tile::EMPTY;
+                        let is_flash = flash.contains(&(row_i, col_i)) && !is_empty;
 
-                        let (fg, bg) = if val == Tile::Empty {
+                        let (fg, bg) = if is_empty {
                             (EMPTY_BG, EMPTY_BG)
                         } else {
                             let base = tile_color(val);
@@ -293,7 +295,7 @@ impl TermGuard {
                         let inner = block.inner(cell_area);
                         f.render_widget(block, cell_area);
 
-                        if val != Tile::Empty {
+                        if !is_empty {
                             let text = Paragraph::new(Span::styled(
                                 val.to_string(),
                                 Style::default().fg(fg).bg(bg).add_modifier(Modifier::BOLD),

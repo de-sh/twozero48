@@ -21,25 +21,22 @@ struct Opts {
     /// else it will be automatically updated to the minimum value.
     #[clap(short, long, default_value = "4")]
     pub board_size: usize,
-    /// Game's winning tile value, only 128, 256, 512, 1024, 2048, and 4096 are supported values.
+    /// Game's winning tile value, must be a power of 2 (e.g. 128, 256, 512, 1024, 2048, 4096, ...).
     #[clap(short, long, default_value = "2048", value_parser = parse_winning)]
     pub winning: Tile,
 }
 
 fn parse_winning(score: &str) -> Result<Tile, String> {
-    let score: usize = score
+    let value: usize = score
         .parse()
-        .map_err(|_| "Only 128, 256, 512, 1024, 2048, and 4096 are supported values")?;
-    match score {
-        128 => Ok(Tile::OneHundredTwentyEight),
-        256 => Ok(Tile::TwoHundredFiftySix),
-        512 => Ok(Tile::FiveHundredTwelve),
-        1024 => Ok(Tile::OneThousandTwentyFour),
-        2048 => Ok(Tile::TwoThousandFourtyEight),
-        4096 => Ok(Tile::FourHundredNinetySix),
-        _ => Err(format!(
-            "{score} is not a supported winning value. Only 128, 256, 512, 1024, 2048, and 4096 are supported values."
-        )),
+        .map_err(|_| format!("{score} is not valid; must be a positive number"))?;
+
+    if value.is_power_of_two() && value >= 2 {
+        Ok(Tile::new(value.trailing_zeros()))
+    } else {
+        Err(format!(
+            "{value} is not valid; must be a power of 2 (e.g. 2048)"
+        ))
     }
 }
 
@@ -47,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Collect command line arguments to initiate/configure a game
     let opts = Opts::parse();
     let mut game = Game::new(opts.board_size, opts.winning);
-    let mut milestone_checker = MilestoneChecker::new(Tile::Empty);
+    let mut milestone_checker = MilestoneChecker::new(Tile::EMPTY);
 
     let mut terminal = TermGuard::new()?;
 
