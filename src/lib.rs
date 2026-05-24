@@ -71,7 +71,7 @@ impl Display for Tile {
     }
 }
 
-type Board = Vec<Vec<Tile>>;
+pub type Board = Vec<Vec<Tile>>;
 
 /// An object that models the board to play 2048 on and defines the rules for the game
 pub struct Game {

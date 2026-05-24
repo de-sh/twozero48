@@ -2,12 +2,11 @@ use std::{error::Error, time::Duration};
 
 use clap::Parser;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
-use tui::{MoveEffects, TermGuard};
 use twozero48::{Game, Move, Status, Tile};
 
-use crate::milestones::MilestoneChecker;
+use crate::state::State;
 
-mod milestones;
+mod state;
 mod tui;
 
 /// Define the arguments and the CLI option interface for twozero48.
@@ -43,91 +42,47 @@ fn parse_winning(score: &str) -> Result<Tile, String> {
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command line arguments to initiate/configure a game
     let opts = Opts::parse();
-    let mut game = Game::new(opts.board_size, opts.winning);
-    let mut milestone_checker = MilestoneChecker::new(Tile::EMPTY);
-
-    let mut terminal = TermGuard::new()?;
-
-    let mut valid_move = true;
-    let mut move_effects = MoveEffects::new();
+    let game = Game::new(opts.board_size, opts.winning);
+    let mut state = State::new(game)?;
 
     loop {
-        move_effects.tick();
-        let (xs, ys) = move_effects.shift();
-
-        let message = if !valid_move {
-            Some("No tiles moved — try a different direction")
-        } else {
-            None
-        };
-        terminal.render_board(&game, message, xs, ys, move_effects.flash())?;
+        state.tick_effects();
+        state.render_board()?;
 
         // Non-blocking poll while animating, blocking otherwise
-        if move_effects.is_active() && !event::poll(Duration::from_millis(30))? {
+        if state.effects_active() && !event::poll(Duration::from_millis(30))? {
             continue;
         }
 
         let event = event::read()?;
         // Non-key events (resize, focus, mouse) should not preserve the stale
         // "No tiles moved" message from a previous invalid directional input.
-        if !matches!(event, Event::Key(_)) {
-            valid_move = true;
+        let Event::Key(key) = event else {
+            state.clear_invalid_move();
             continue;
-        }
-        if let Event::Key(key) = event {
-            let mov = match (key.code, key.modifiers) {
-                (KeyCode::Char('q'), _)
-                | (KeyCode::Char('Q'), _)
-                | (KeyCode::Char('c'), KeyModifiers::CONTROL)
-                | (KeyCode::Esc, _) => break,
-                (KeyCode::Char('a'), _) | (KeyCode::Char('A'), _) | (KeyCode::Left, _) => {
-                    Move::Left
-                }
-                (KeyCode::Char('d'), _) | (KeyCode::Char('D'), _) | (KeyCode::Right, _) => {
-                    Move::Right
-                }
-                (KeyCode::Char('w'), _) | (KeyCode::Char('W'), _) | (KeyCode::Up, _) => Move::Up,
-                (KeyCode::Char('s'), _) | (KeyCode::Char('S'), _) | (KeyCode::Down, _) => {
-                    Move::Down
-                }
-                _ => Move::Dont,
-            };
+        };
 
-            let old_board = game.board().clone();
-            valid_move = game.mover(mov);
+        let mov = match (key.code, key.modifiers) {
+            (KeyCode::Char('q'), _)
+            | (KeyCode::Char('Q'), _)
+            | (KeyCode::Char('c'), KeyModifiers::CONTROL)
+            | (KeyCode::Esc, _) => break,
+            (KeyCode::Char('a'), _) | (KeyCode::Char('A'), _) | (KeyCode::Left, _) => Move::Left,
+            (KeyCode::Char('d'), _) | (KeyCode::Char('D'), _) | (KeyCode::Right, _) => Move::Right,
+            (KeyCode::Char('w'), _) | (KeyCode::Char('W'), _) | (KeyCode::Up, _) => Move::Up,
+            (KeyCode::Char('s'), _) | (KeyCode::Char('S'), _) | (KeyCode::Down, _) => Move::Down,
+            _ => Move::Dont,
+        };
 
-            if valid_move {
-                move_effects.record_move(mov, &old_board, game.board());
+        let end_msg = match state.apply_move(mov) {
+            Status::On => continue,
+            Status::Won => "You won!  Press any key to exit.",
+            Status::Lost => "Game over!  Press any key to exit.",
+        };
 
-                game.refresh();
-
-                let current_largest = game.largest_tile();
-                if milestone_checker.is_milestone(current_largest) {
-                    terminal.render_board(
-                        &game,
-                        Some(&format!("{current_largest} reached!")),
-                        0,
-                        0,
-                        move_effects.flash(),
-                    )?;
-                }
-            }
-
-            match game.status() {
-                Status::On => continue,
-                status => {
-                    let end_msg = match status {
-                        Status::Won => "You won!  Press any key to exit.",
-                        Status::Lost => "Game over!  Press any key to exit.",
-                        Status::On => unreachable!(),
-                    };
-                    move_effects.clear();
-                    terminal.render_board(&game, Some(end_msg), 0, 0, move_effects.flash())?;
-                    event::read()?;
-                    break;
-                }
-            }
-        }
+        state.render_end_message(end_msg)?;
+        event::read()?;
+        break;
     }
 
     Ok(())

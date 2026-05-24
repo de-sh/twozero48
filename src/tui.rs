@@ -164,16 +164,14 @@ impl TermGuard {
     pub fn new() -> io::Result<Self> {
         enable_raw_mode()?;
         let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen).map_err(|e| {
+        execute!(stdout, EnterAlternateScreen).inspect_err(|_| {
             let _ = disable_raw_mode();
-            e
         })?;
         let backend = CrosstermBackend::new(stdout);
         Terminal::new(backend)
-            .map_err(|e| {
+            .inspect_err(|_| {
                 let _ = disable_raw_mode();
                 let _ = execute!(io::stdout(), LeaveAlternateScreen);
-                io::Error::other(e.to_string())
             })
             .map(Self)
     }
@@ -263,7 +261,7 @@ impl TermGuard {
                     board_area.y as i16 + board_area.height.saturating_sub(board_h) as i16 / 2;
 
                 for (row_i, row) in board.iter().enumerate() {
-                    for (col_i, &val) in row.iter().enumerate() {
+                    for (col_i, &tile) in row.iter().enumerate() {
                         let cx = x_base + col_i as i16 * CELL_W as i16 + x_shift;
                         let cy = y_base + row_i as i16 * CELL_H as i16 + y_shift;
                         if cx < 0 || cy < 0 {
@@ -276,13 +274,13 @@ impl TermGuard {
                         }
 
                         let cell_area = Rect::new(cx, cy, CELL_W, CELL_H);
-                        let is_empty = val == Tile::EMPTY;
+                        let is_empty = tile == Tile::EMPTY;
                         let is_flash = flash.contains(&(row_i, col_i)) && !is_empty;
 
                         let (fg, bg) = if is_empty {
                             (EMPTY_BG, EMPTY_BG)
                         } else {
-                            let base = tile_color(val);
+                            let base = tile_color(tile);
                             let bg = if is_flash { brighten(base, 70) } else { base };
                             (Color::White, bg)
                         };
@@ -297,7 +295,7 @@ impl TermGuard {
 
                         if !is_empty {
                             let text = Paragraph::new(Span::styled(
-                                val.to_string(),
+                                tile.to_string(),
                                 Style::default().fg(fg).bg(bg).add_modifier(Modifier::BOLD),
                             ))
                             .alignment(Alignment::Center);
