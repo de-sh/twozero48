@@ -279,6 +279,7 @@ impl Game {
 mod tests {
     use super::*;
 
+    // [2,4,8,0] → [2,4,8,0]: no merge
     #[test]
     fn vec_compress_no_merge() {
         let mut v = vec![Tile::TWO, Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY];
@@ -287,6 +288,7 @@ mod tests {
         assert_eq!(v, vec![Tile::TWO, Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY]);
     }
 
+    // [2,2,0,0] → [4,0,0,0]: single merge
     #[test]
     fn vec_compress_single_merge() {
         let mut v = vec![Tile::TWO, Tile::TWO, Tile::EMPTY, Tile::EMPTY];
@@ -295,6 +297,7 @@ mod tests {
         assert_eq!(v, vec![Tile::FOUR, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY]);
     }
 
+    // [4,4,4,4] → [8,8,0,0]: two merges
     #[test]
     fn vec_compress_multiple_merges() {
         let mut v = vec![Tile::FOUR, Tile::FOUR, Tile::FOUR, Tile::FOUR];
@@ -302,13 +305,25 @@ mod tests {
         game.vec_compress(&mut v);
         assert_eq!(
             v,
-            vec![Tile { exp: 3 }, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY]
+            vec![Tile { exp: 3 }, Tile { exp: 3 }, Tile::EMPTY, Tile::EMPTY]
         );
     }
 
+    // [2,2,4,4] → [4,4,0,0]: multiple distinct merges
+    #[test]
+    fn vec_compress_multiple_distinct_merges_scores_all_merges() {
+        let mut v = vec![Tile::TWO, Tile::TWO, Tile::FOUR, Tile::FOUR];
+        let mut game = Game::new(4, Tile::FOUR);
+        game.vec_compress(&mut v);
+        assert_eq!(
+            v,
+            vec![Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY, Tile::EMPTY]
+        );
+    }
+
+    // [2,2,2,0] → [4,2,0,0]: first pair merges
     #[test]
     fn vec_compress_no_double_merge() {
-        // [2,2,2,0] → [4,2,0,0]: only first pair merges, score=4
         let mut v = vec![Tile::TWO, Tile::TWO, Tile::TWO, Tile::EMPTY];
         let mut game = Game::new(4, Tile::FOUR);
         game.vec_compress(&mut v);
