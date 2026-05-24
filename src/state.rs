@@ -38,7 +38,13 @@ impl State {
     }
 
     pub fn apply_move(&mut self, mov: Move) -> Status {
+        if matches!(mov, Move::Dont) {
+            self.valid_move = false;
+            return self.game.status();
+        }
+
         let old_board = self.game.board().clone();
+
         self.valid_move = self.game.mover(mov);
 
         if self.valid_move {
