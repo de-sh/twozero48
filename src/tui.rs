@@ -1,6 +1,6 @@
 use std::{
     collections::HashSet,
-    io,
+    io::{self, Write},
     time::{Duration, Instant},
 };
 
@@ -161,22 +161,43 @@ fn tile_color(tile: Tile) -> Color {
     }
 }
 
-pub struct TermGuard(Terminal<CrosstermBackend<io::Stdout>>);
+/// A wrapper to handle writing to crossterm's alternate screen mode
+pub struct TuiWriter {
+    stdout: io::Stdout,
+}
 
-impl TermGuard {
+impl TuiWriter {
     pub fn new() -> io::Result<Self> {
-        enable_raw_mode()?;
-        let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen).inspect_err(|_| {
-            let _ = disable_raw_mode();
-        })?;
-        let backend = CrosstermBackend::new(stdout);
-        Terminal::new(backend)
-            .inspect_err(|_| {
-                let _ = disable_raw_mode();
-                let _ = execute!(io::stdout(), LeaveAlternateScreen);
-            })
-            .map(Self)
+        enable_raw_mode().map(|_| Self {
+            stdout: io::stdout(),
+        })
+    }
+}
+
+impl Write for TuiWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.stdout.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.stdout.flush()
+    }
+}
+
+impl Drop for TuiWriter {
+    fn drop(&mut self) {
+        let _ = disable_raw_mode();
+        let _ = execute!(self.stdout, LeaveAlternateScreen);
+    }
+}
+
+pub struct Tui(Terminal<CrosstermBackend<TuiWriter>>);
+
+impl Tui {
+    pub fn new() -> io::Result<Self> {
+        let mut out = TuiWriter::new()?;
+        execute!(out, EnterAlternateScreen)?;
+        Terminal::new(CrosstermBackend::new(out)).map(Self)
     }
 
     pub fn render_board(
@@ -351,10 +372,8 @@ impl TermGuard {
     }
 }
 
-impl Drop for TermGuard {
+impl Drop for Tui {
     fn drop(&mut self) {
-        let _ = disable_raw_mode();
-        let _ = execute!(self.0.backend_mut(), LeaveAlternateScreen);
         let _ = self.0.show_cursor();
     }
 }

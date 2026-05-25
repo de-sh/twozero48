@@ -2,10 +2,10 @@ use std::io;
 
 use twozero48::{Game, Move, Status, Tile};
 
-use crate::tui::{MoveEffects, TermGuard};
+use crate::tui::{MoveEffects, Tui};
 
 pub struct State {
-    terminal: TermGuard,
+    terminal: Tui,
     game: Game,
     move_effects: MoveEffects,
     valid_move: bool,
@@ -16,7 +16,7 @@ pub struct State {
 impl State {
     pub fn new(game: Game) -> io::Result<Self> {
         Ok(Self {
-            terminal: TermGuard::new()?,
+            terminal: Tui::new()?,
             game,
             move_effects: MoveEffects::new(),
             valid_move: true,
