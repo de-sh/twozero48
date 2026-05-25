@@ -153,10 +153,7 @@ impl Game {
         }
 
         let board_size = self.board.size();
-        for (i, j) in (0..board_size)
-            .map(|i| (0..board_size).map(move |j| (i, j)))
-            .flatten()
-        {
+        for (i, j) in (0..board_size).flat_map(|i| (0..board_size).map(move |j| (i, j))) {
             if i != board_size - 1 && self.board[(i, j)] == self.board[(i + 1, j)] {
                 return false;
             }
