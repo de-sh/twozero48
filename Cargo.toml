@@ -13,6 +13,13 @@ crossterm = "0.29"
 rand = "0.10"
 ratatui = "0.30"
 
+[dev-dependencies]
+criterion = "0.8"
+
 [[bin]]
 name = "twozero48"
 path = "src/main.rs"
+
+[[bench]]
+name = "board_moves"
+harness = false
