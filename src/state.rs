@@ -9,7 +9,6 @@ pub struct State {
     game: Game,
     move_effects: MoveEffects,
     valid_move: bool,
-    last_milestone: Option<Tile>,
     previous_largest: Tile,
 }
 
@@ -20,7 +19,6 @@ impl State {
             game,
             move_effects: MoveEffects::new(),
             valid_move: true,
-            last_milestone: None,
             previous_largest: Tile::EMPTY,
         })
     }
@@ -87,8 +85,5 @@ impl State {
             return;
         }
         self.previous_largest = tile;
-        if tile > Tile::ONE_TWO_EIGHT {
-            self.last_milestone = Some(tile);
-        }
     }
 }
