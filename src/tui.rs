@@ -16,7 +16,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
 };
-use twozero48::{Game, Move, Tile};
+use twozero48::{Board, Game, Move, Tile};
 
 const CELL_W: u16 = 10;
 const CELL_H: u16 = 5;
@@ -86,9 +86,9 @@ impl MoveEffects {
         }
     }
 
-    pub fn record_move(&mut self, mov: Move, old_board: &[Vec<Tile>], new_board: &[Vec<Tile>]) {
+    pub fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
         self.anim = AnimState::new(mov);
-        self.flash = changed_cells(old_board, new_board);
+        self.flash = changed_cells(&old_board, &new_board);
         self.flash_until = Some(Instant::now() + FLASH_DURATION);
     }
 
@@ -126,10 +126,13 @@ impl MoveEffects {
     }
 }
 
-fn changed_cells(old: &[Vec<Tile>], new: &[Vec<Tile>]) -> HashSet<(usize, usize)> {
+fn changed_cells(old: &Board, new: &Board) -> HashSet<(usize, usize)> {
     let mut set = HashSet::new();
-    for (r, (old_row, new_row)) in old.iter().zip(new.iter()).enumerate() {
-        for (c, (&ov, &nv)) in old_row.iter().zip(new_row.iter()).enumerate() {
+    let size = old.size().min(new.size());
+    for r in 0..size {
+        for c in 0..size {
+            let ov = old[(r, c)];
+            let nv = new[(r, c)];
             if nv != ov && nv != Tile::EMPTY {
                 set.insert((r, c));
             }
@@ -188,7 +191,7 @@ impl TermGuard {
             .draw(|f| -> () {
                 let board = game.board();
                 let area = f.area();
-                let board_size = board.len() as u16;
+                let board_size = game.board().size() as u16;
                 let board_w = CELL_W * board_size;
                 let board_h = CELL_H * board_size;
 
@@ -260,8 +263,10 @@ impl TermGuard {
                 let y_base =
                     board_area.y as i16 + board_area.height.saturating_sub(board_h) as i16 / 2;
 
-                for (row_i, row) in board.iter().enumerate() {
-                    for (col_i, &tile) in row.iter().enumerate() {
+                let board_size = board.size();
+                for row_i in 0..board_size {
+                    for col_i in 0..board_size {
+                        let tile = board[(row_i, col_i)];
                         let cx = x_base + col_i as i16 * CELL_W as i16 + x_shift;
                         let cy = y_base + row_i as i16 * CELL_H as i16 + y_shift;
                         if cx < 0 || cy < 0 {

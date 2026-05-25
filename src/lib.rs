@@ -2,6 +2,10 @@ use std::fmt::Display;
 
 use rand::prelude::*;
 
+mod board;
+
+pub use board::Board;
+
 /// Used to depict user choice, an input to the [`Game`] API
 #[derive(Clone, Copy)]
 pub enum Move {
@@ -71,12 +75,9 @@ impl Display for Tile {
     }
 }
 
-pub type Board = Vec<Vec<Tile>>;
-
 /// An object that models the board to play 2048 on and defines the rules for the game
 pub struct Game {
     board: Board,
-    board_size: usize,
     winning: Tile,
     score: usize,
 }
@@ -88,11 +89,10 @@ impl Game {
     pub fn new(board_size: usize, winning: Tile) -> Self {
         // Ensure the board size is at least 2
         let board_size = board_size.clamp(2, usize::MAX);
-        let board = vec![vec![Tile::EMPTY; board_size]; board_size];
+        let board = Board::new(board_size);
 
         let mut init = Self {
             board,
-            board_size,
             winning,
             score: 0,
         };
@@ -118,70 +118,18 @@ impl Game {
         self.score
     }
 
-    /// Performs the compression of board's values towards the left most column
-    fn move_left(&mut self) {
-        for i in 0..self.board_size {
-            let mut v = self.board[i].clone();
-
-            self.vec_compress(&mut v);
-
-            self.board[i] = v;
-        }
-    }
-
-    /// Performs the compression of board's values towards the right most column
-    fn move_right(&mut self) {
-        for i in 0..self.board_size {
-            let mut v = self.board[i].clone();
-
-            v.reverse();
-            self.vec_compress(&mut v);
-            v.reverse();
-
-            self.board[i] = v;
-        }
-    }
-
-    /// Performs the compression of board's values towards the top row
-    fn move_up(&mut self) {
-        for i in 0..self.board_size {
-            let mut v = (0..self.board_size).map(|j| self.board[j][i]).collect();
-
-            self.vec_compress(&mut v);
-
-            for (j, tile) in v.iter().enumerate().take(self.board_size) {
-                self.board[j][i] = *tile;
-            }
-        }
-    }
-
-    /// Performs the compression of board's values towards the bottom row
-    fn move_down(&mut self) {
-        for i in 0..self.board_size {
-            let mut v: Vec<Tile> = (0..self.board_size).map(|j| self.board[j][i]).collect();
-
-            v.reverse();
-            self.vec_compress(&mut v);
-            v.reverse();
-
-            for (j, tile) in v.iter().enumerate().take(self.board_size) {
-                self.board[j][i] = *tile;
-            }
-        }
-    }
-
     /// Sets a random empty cell to 2 (90%) or 4 (10%). No-op if board is full.
     fn spawn(&mut self) {
-        let empty: Vec<(usize, usize)> = (0..self.board_size)
-            .flat_map(|r| (0..self.board_size).map(move |c| (r, c)))
-            .filter(|&(r, c)| self.board[r][c] == Tile::EMPTY)
+        let empty: Vec<(usize, usize)> = (0..self.board.size())
+            .flat_map(|r| (0..self.board.size()).map(move |c| (r, c)))
+            .filter(|&(r, c)| self.board[(r, c)] == Tile::EMPTY)
             .collect();
         if empty.is_empty() {
             return;
         }
         let mut rng = rand::rng();
         let (r, c) = empty[rng.random_range(0..empty.len())];
-        self.board[r][c] = if rng.random_bool(0.1) {
+        self.board[(r, c)] = if rng.random_bool(0.1) {
             Tile::FOUR
         } else {
             Tile::TWO
@@ -190,12 +138,7 @@ impl Game {
 
     /// Returns the current largest tile on the board
     pub fn largest_tile(&self) -> Tile {
-        self.board()
-            .iter()
-            .flatten()
-            .copied()
-            .max()
-            .unwrap_or(Tile::EMPTY)
+        self.board.max_tile()
     }
 
     /// Refreshes(spawns new tile on an empty cell) the board after a valid move
@@ -205,31 +148,28 @@ impl Game {
 
     /// Verify if board is filled and no valid moves left
     fn is_locked(&self) -> bool {
-        if self.contains(Tile::EMPTY) {
+        if self.board.contains(Tile::EMPTY) {
             return false;
         }
 
-        for i in 0..self.board_size {
-            for j in 0..self.board_size {
-                if i != self.board_size - 1 && self.board[i][j] == self.board[i + 1][j] {
-                    return false;
-                }
-                if j != self.board_size - 1 && self.board[i][j] == self.board[i][j + 1] {
-                    return false;
-                }
+        let board_size = self.board.size();
+        for (i, j) in (0..board_size)
+            .map(|i| (0..board_size).map(move |j| (i, j)))
+            .flatten()
+        {
+            if i != board_size - 1 && self.board[(i, j)] == self.board[(i + 1, j)] {
+                return false;
+            }
+            if j != board_size - 1 && self.board[(i, j)] == self.board[(i, j + 1)] {
+                return false;
             }
         }
 
         true
     }
 
-    /// Check if board contains value x
-    fn contains(&self, x: Tile) -> bool {
-        self.board.iter().any(|v| v.contains(&x))
-    }
-
     pub fn status(&self) -> Status {
-        if self.contains(self.winning) {
+        if self.board.contains(self.winning) {
             Status::Won
         } else if self.is_locked() {
             Status::Lost
@@ -243,92 +183,22 @@ impl Game {
     pub fn mover(&mut self, mov: Move) -> bool {
         let temp = self.board.clone();
 
-        match mov {
-            Move::Left => self.move_left(),
-            Move::Right => self.move_right(),
-            Move::Up => self.move_up(),
-            Move::Down => self.move_down(),
-            _ => (),
-        }
+        self.score += match mov {
+            Move::Left => self.board.move_left(),
+            Move::Right => self.board.move_right(),
+            Move::Up => self.board.move_up(),
+            Move::Down => self.board.move_down(),
+            _ => 0,
+        };
 
         self.board != temp
-    }
-
-    /// Compress a row/column, keeps track of score earned from merges
-    fn vec_compress(&mut self, v: &mut Vec<Tile>) {
-        v.retain(|x| *x != Tile::EMPTY);
-        let vl = v.len();
-
-        if vl > 1 {
-            for i in 0..vl - 1 {
-                if v[i] == v[i + 1] {
-                    let promoted = v[i].promote();
-                    v[i] = promoted;
-                    v[i + 1] = Tile::EMPTY;
-                    self.score += promoted.score();
-                }
-            }
-        }
-
-        v.retain(|x| *x != Tile::EMPTY);
-        v.resize(self.board_size, Tile::EMPTY);
     }
 }
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
-
-    // [2,4,8,0] → [2,4,8,0]: no merge
-    #[test]
-    fn vec_compress_no_merge() {
-        let mut v = vec![Tile::TWO, Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY];
-        let mut game = Game::new(4, Tile::FOUR);
-        game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::TWO, Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY]);
-    }
-
-    // [2,2,0,0] → [4,0,0,0]: single merge
-    #[test]
-    fn vec_compress_single_merge() {
-        let mut v = vec![Tile::TWO, Tile::TWO, Tile::EMPTY, Tile::EMPTY];
-        let mut game = Game::new(4, Tile::FOUR);
-        game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::FOUR, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY]);
-    }
-
-    // [4,4,4,4] → [8,8,0,0]: two merges
-    #[test]
-    fn vec_compress_multiple_merges() {
-        let mut v = vec![Tile::FOUR, Tile::FOUR, Tile::FOUR, Tile::FOUR];
-        let mut game = Game::new(4, Tile::FOUR);
-        game.vec_compress(&mut v);
-        assert_eq!(
-            v,
-            vec![Tile { exp: 3 }, Tile { exp: 3 }, Tile::EMPTY, Tile::EMPTY]
-        );
-    }
-
-    // [2,2,4,4] → [4,4,0,0]: multiple distinct merges
-    #[test]
-    fn vec_compress_multiple_distinct_merges_scores_all_merges() {
-        let mut v = vec![Tile::TWO, Tile::TWO, Tile::FOUR, Tile::FOUR];
-        let mut game = Game::new(4, Tile::FOUR);
-        game.vec_compress(&mut v);
-        assert_eq!(
-            v,
-            vec![Tile::FOUR, Tile { exp: 3 }, Tile::EMPTY, Tile::EMPTY]
-        );
-    }
-
-    // [2,2,2,0] → [4,2,0,0]: first pair merges
-    #[test]
-    fn vec_compress_no_double_merge() {
-        let mut v = vec![Tile::TWO, Tile::TWO, Tile::TWO, Tile::EMPTY];
-        let mut game = Game::new(4, Tile::FOUR);
-        game.vec_compress(&mut v);
-        assert_eq!(v, vec![Tile::FOUR, Tile::TWO, Tile::EMPTY, Tile::EMPTY]);
-    }
 
     #[test]
     fn score_starts_at_zero() {
@@ -339,9 +209,8 @@ mod tests {
     #[test]
     fn score_accumulates_after_merge() {
         let mut game = Game::new(2, Tile { exp: 11 });
-        // Force a known board state: [2,2] / [0,0]
-        game.board[0] = vec![Tile::TWO, Tile::TWO];
-        game.board[1] = vec![Tile::EMPTY, Tile::EMPTY];
+        // Force a known board state: [[2,2], [0,0]]
+        game.board = Board::from_grid([[Tile::TWO, Tile::TWO], [Tile::EMPTY, Tile::EMPTY]]);
         game.mover(Move::Left);
         assert_eq!(game.score(), 4);
     }
@@ -349,7 +218,7 @@ mod tests {
     #[test]
     fn current_largest_tile_on_board() {
         let mut game = Game::new(4, Tile { exp: 11 });
-        game.board[0][0] = Tile { exp: 6 };
+        game.board[(0, 0)] = Tile { exp: 6 };
         assert_eq!(game.largest_tile(), Tile { exp: 6 });
     }
 }
