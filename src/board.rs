@@ -8,7 +8,7 @@ const MAX_SIZE: usize = usize::MAX.isqrt();
 /// Ensures the board size is valid
 fn check_size(size: usize) {
     assert!(
-        size >= 2 && size <= MAX_SIZE,
+        (2..=MAX_SIZE).contains(&size),
         "board size must be between 2 and {MAX_SIZE}"
     );
 }
