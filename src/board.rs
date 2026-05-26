@@ -1,5 +1,18 @@
 use super::Tile;
 
+/// The maximum size of the board (square root of usize::MAX)
+///
+/// i.e. `u32::MAX` for 64bit and `u16::MAX` for 32bit architectures
+const MAX_SIZE: usize = usize::MAX.isqrt();
+
+/// Ensures the board size is valid
+fn check_size(size: usize) {
+    assert!(
+        size >= 2 && size <= MAX_SIZE,
+        "board size must be between 2 and {MAX_SIZE}"
+    );
+}
+
 /// A Square (size x size) 2D grid of tiles for the 2048 game
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Board {
@@ -9,22 +22,20 @@ pub struct Board {
 
 impl Board {
     pub fn new(size: usize) -> Self {
-        assert!(size >= 2, "board size must be at least 2");
-        let len = size.checked_mul(size).expect("board is too large");
+        check_size(size);
         Self {
-            tiles: vec![Tile::EMPTY; len],
+            tiles: vec![Tile::EMPTY; size * size],
             size,
         }
     }
 
     #[cfg(test)]
     pub fn from_grid<const N: usize>(grid: [[Tile; N]; N]) -> Self {
-        assert!(N >= 2, "board size must be at least 2");
-        let size = N;
+        check_size(N);
         let tiles = (0..N)
             .flat_map(|row| (0..N).map(move |col| grid[row][col]))
             .collect();
-        Self { tiles, size }
+        Self { tiles, size: N }
     }
 
     pub fn size(&self) -> usize {
@@ -138,7 +149,8 @@ impl std::ops::Index<(usize, usize)> for Board {
     type Output = Tile;
 
     fn index(&self, (row, col): (usize, usize)) -> &Self::Output {
-        &self.tiles[self.offset(row, col)]
+        let offset = self.offset(row, col);
+        &self.tiles[offset]
     }
 }
 
