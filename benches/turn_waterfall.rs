@@ -114,7 +114,7 @@ impl Play for MockGame {
     fn status(&self) -> Status {
         if self.board.contains(self.winning) {
             Status::Won
-        } else if is_locked(&self.board) {
+        } else if self.board.is_locked() {
             Status::Lost
         } else {
             Status::On
@@ -156,24 +156,6 @@ fn state_for(board: Board) -> State<MockGame, TestBackend> {
     let tui = Tui::from_backend(TestBackend::new(WIDTH, HEIGHT))
         .expect("constructing TestBackend terminal failed");
     State::with_tui(MockGame::from_board(board, Tile::new(16)), tui)
-}
-
-fn is_locked(board: &Board) -> bool {
-    if board.contains(Tile::EMPTY) {
-        return false;
-    }
-
-    let size = board.size();
-    for (row, col) in (0..size).flat_map(|row| (0..size).map(move |col| (row, col))) {
-        if row != size - 1 && board[(row, col)] == board[(row + 1, col)] {
-            return false;
-        }
-        if col != size - 1 && board[(row, col)] == board[(row, col + 1)] {
-            return false;
-        }
-    }
-
-    true
 }
 
 fn sample_board() -> Board {

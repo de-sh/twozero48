@@ -117,25 +117,6 @@ impl Game {
 
         init
     }
-
-    /// Verify if board is filled and no valid moves left
-    fn is_locked(&self) -> bool {
-        if self.board.contains(Tile::EMPTY) {
-            return false;
-        }
-
-        let board_size = self.board.size();
-        for (i, j) in (0..board_size).flat_map(|i| (0..board_size).map(move |j| (i, j))) {
-            if i != board_size - 1 && self.board[(i, j)] == self.board[(i + 1, j)] {
-                return false;
-            }
-            if j != board_size - 1 && self.board[(i, j)] == self.board[(i, j + 1)] {
-                return false;
-            }
-        }
-
-        true
-    }
 }
 
 impl Play for Game {
@@ -163,7 +144,7 @@ impl Play for Game {
     fn status(&self) -> Status {
         if self.board.contains(self.winning) {
             Status::Won
-        } else if self.is_locked() {
+        } else if self.board.is_locked() {
             Status::Lost
         } else {
             Status::On

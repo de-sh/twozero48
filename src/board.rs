@@ -143,6 +143,33 @@ impl Board {
     pub fn contains(&self, tile: Tile) -> bool {
         self.tiles.iter().any(|t| t.exp == tile.exp)
     }
+
+    /// Verify if board is filled and no valid moves left
+    pub fn is_locked(&self) -> bool {
+        for row in 0..self.size {
+            for col in 0..self.size {
+                let idx = row * self.size + col;
+                let tile = self.tiles[idx];
+
+                // Check if tile is empty
+                if tile == Tile::EMPTY {
+                    return false;
+                }
+
+                // Check right neighbor
+                if col < self.size - 1 && tile == self.tiles[idx + 1] {
+                    return false;
+                }
+
+                // Check down neighbor
+                if row < self.size - 1 && tile == self.tiles[idx + self.size] {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
 }
 
 impl std::ops::Index<(usize, usize)> for Board {
