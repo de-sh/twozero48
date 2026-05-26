@@ -1,8 +1,6 @@
 use std::io;
 
-use twozero48::{Game, Move, Status, Tile};
-
-use crate::tui::{MoveEffects, Tui};
+use crate::{Game, Move, Status, Tile, Tui, tui::MoveEffects};
 
 pub struct State {
     terminal: Tui,

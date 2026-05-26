@@ -2,12 +2,7 @@ use std::{error::Error, time::Duration};
 
 use clap::Parser;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
-use twozero48::{Game, Move, Status, Tile};
-
-use crate::state::State;
-
-mod state;
-mod tui;
+use twozero48::{Game, Move, State, Status, Tile};
 
 /// Define the arguments and the CLI option interface for twozero48.
 #[derive(Parser)]

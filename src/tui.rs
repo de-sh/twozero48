@@ -16,7 +16,8 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
 };
-use twozero48::{Board, Game, Move, Tile};
+
+use crate::{Board, Game, Move, Tile};
 
 const CELL_W: u16 = 10;
 const CELL_H: u16 = 5;

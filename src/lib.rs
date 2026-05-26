@@ -3,8 +3,12 @@ use std::fmt::Display;
 use rand::prelude::*;
 
 mod board;
+pub mod state;
+pub mod tui;
 
 pub use board::Board;
+pub use state::State;
+pub use tui::{Tui, TuiWriter};
 
 /// Used to depict user choice, an input to the [`Game`] API
 #[derive(Clone, Copy)]
