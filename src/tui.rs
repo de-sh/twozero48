@@ -10,14 +10,14 @@ use crossterm::{
 };
 use ratatui::{
     Terminal,
-    backend::CrosstermBackend,
+    backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-use crate::{Board, Game, Move, Tile};
+use crate::{Board, Move, Play, Tile};
 
 const CELL_W: u16 = 10;
 const CELL_H: u16 = 5;
@@ -72,6 +72,7 @@ impl AnimState {
     }
 }
 
+#[derive(Default)]
 pub struct MoveEffects {
     anim: Option<AnimState>,
     flash: HashSet<(usize, usize)>,
@@ -80,16 +81,12 @@ pub struct MoveEffects {
 
 impl MoveEffects {
     pub fn new() -> Self {
-        Self {
-            anim: None,
-            flash: HashSet::new(),
-            flash_until: None,
-        }
+        Self::default()
     }
 
     pub fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
         self.anim = AnimState::new(mov);
-        self.flash = changed_cells(&old_board, &new_board);
+        self.flash = changed_cells(old_board, new_board);
         self.flash_until = Some(Instant::now() + FLASH_DURATION);
     }
 
@@ -192,18 +189,24 @@ impl Drop for TuiWriter {
     }
 }
 
-pub struct Tui(Terminal<CrosstermBackend<TuiWriter>>);
+pub struct Tui<B: Backend>(Terminal<B>);
 
-impl Tui {
+impl Tui<CrosstermBackend<TuiWriter>> {
     pub fn new() -> io::Result<Self> {
         let mut out = TuiWriter::new()?;
         execute!(out, EnterAlternateScreen)?;
         Terminal::new(CrosstermBackend::new(out)).map(Self)
     }
+}
+
+impl<B: Backend> Tui<B> {
+    pub fn from_backend(backend: B) -> Result<Self, B::Error> {
+        Terminal::new(backend).map(Self)
+    }
 
     pub fn render_board(
         &mut self,
-        game: &Game,
+        game: &impl Play,
         message: Option<&str>,
         x_shift: i16,
         y_shift: i16,
@@ -373,7 +376,7 @@ impl Tui {
     }
 }
 
-impl Drop for Tui {
+impl<B: Backend> Drop for Tui<B> {
     fn drop(&mut self) {
         let _ = self.0.show_cursor();
     }

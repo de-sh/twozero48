@@ -11,7 +11,7 @@ pub use state::State;
 pub use tui::{Tui, TuiWriter};
 
 /// Used to depict user choice, an input to the [`Game`] API
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Move {
     /// Executes leftward compression of board elements
     Left,
@@ -26,6 +26,7 @@ pub enum Move {
 }
 
 /// Used to depict the status in the [`Game`] API
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Status {
     /// Game has finished, player won
     Won,
@@ -33,6 +34,16 @@ pub enum Status {
     Lost,
     /// Game continues, neither won nor lost
     On,
+}
+
+pub trait Play {
+    fn board(&self) -> &Board;
+    fn winning(&self) -> Tile;
+    fn score(&self) -> usize;
+    fn largest_tile(&self) -> Tile;
+    fn status(&self) -> Status;
+    fn mover(&mut self, mov: Move) -> bool;
+    fn spawn(&mut self);
 }
 
 /// Represents a tile on the game board. exp is the exponent of 2 that the tile represents.
@@ -107,49 +118,6 @@ impl Game {
         init
     }
 
-    /// Return immutable reference to the board
-    pub fn board(&self) -> &Board {
-        &self.board
-    }
-
-    /// Returns the Tile for winning
-    pub fn winning(&self) -> Tile {
-        self.winning
-    }
-
-    /// Returns the current score
-    pub fn score(&self) -> usize {
-        self.score
-    }
-
-    /// Sets a random empty cell to 2 (90%) or 4 (10%). No-op if board is full.
-    fn spawn(&mut self) {
-        let empty: Vec<(usize, usize)> = (0..self.board.size())
-            .flat_map(|r| (0..self.board.size()).map(move |c| (r, c)))
-            .filter(|&(r, c)| self.board[(r, c)] == Tile::EMPTY)
-            .collect();
-        if empty.is_empty() {
-            return;
-        }
-        let mut rng = rand::rng();
-        let (r, c) = empty[rng.random_range(0..empty.len())];
-        self.board[(r, c)] = if rng.random_bool(0.1) {
-            Tile::FOUR
-        } else {
-            Tile::TWO
-        };
-    }
-
-    /// Returns the current largest tile on the board
-    pub fn largest_tile(&self) -> Tile {
-        self.board.max_tile()
-    }
-
-    /// Refreshes(spawns new tile on an empty cell) the board after a valid move
-    pub fn refresh(&mut self) {
-        self.spawn();
-    }
-
     /// Verify if board is filled and no valid moves left
     fn is_locked(&self) -> bool {
         if self.board.contains(Tile::EMPTY) {
@@ -168,8 +136,31 @@ impl Game {
 
         true
     }
+}
 
-    pub fn status(&self) -> Status {
+impl Play for Game {
+    /// Return immutable reference to the board
+    fn board(&self) -> &Board {
+        &self.board
+    }
+
+    /// Returns the Tile for winning
+    fn winning(&self) -> Tile {
+        self.winning
+    }
+
+    /// Returns the current score
+    fn score(&self) -> usize {
+        self.score
+    }
+
+    /// Returns the current largest tile on the board
+    fn largest_tile(&self) -> Tile {
+        self.board.max_tile()
+    }
+
+    /// Returns the current status of the game
+    fn status(&self) -> Status {
         if self.board.contains(self.winning) {
             Status::Won
         } else if self.is_locked() {
@@ -181,7 +172,7 @@ impl Game {
 
     /// [`Game`] API entry-point, operated by [`Move`] as input
     /// Output bool is used to check if move caused any change to the board
-    pub fn mover(&mut self, mov: Move) -> bool {
+    fn mover(&mut self, mov: Move) -> bool {
         let temp = self.board.clone();
 
         self.score += match mov {
@@ -193,6 +184,24 @@ impl Game {
         };
 
         self.board != temp
+    }
+
+    /// Sets a random empty cell to 2 (90%) or 4 (10%). No-op if board is full.
+    fn spawn(&mut self) {
+        let empty: Vec<(usize, usize)> = (0..self.board.size())
+            .flat_map(|r| (0..self.board.size()).map(move |c| (r, c)))
+            .filter(|&(r, c)| self.board[(r, c)] == Tile::EMPTY)
+            .collect();
+        if empty.is_empty() {
+            return;
+        }
+        let mut rng = rand::rng();
+        let (r, c) = empty[rng.random_range(0..empty.len())];
+        self.board[(r, c)] = if rng.random_bool(0.1) {
+            Tile::FOUR
+        } else {
+            Tile::TWO
+        };
     }
 }
 

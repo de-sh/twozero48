@@ -1,8 +1,39 @@
 use std::{error::Error, time::Duration};
 
 use clap::Parser;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use twozero48::{Game, Move, State, Status, Tile};
+
+/// Parsed terminal input.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Input {
+    Move(Move),
+    Quit,
+}
+
+impl From<KeyEvent> for Input {
+    fn from(key: KeyEvent) -> Self {
+        match (key.code, key.modifiers) {
+            (KeyCode::Char('q'), _)
+            | (KeyCode::Char('Q'), _)
+            | (KeyCode::Char('c'), KeyModifiers::CONTROL)
+            | (KeyCode::Esc, _) => Input::Quit,
+            (KeyCode::Char('a'), _) | (KeyCode::Char('A'), _) | (KeyCode::Left, _) => {
+                Input::Move(Move::Left)
+            }
+            (KeyCode::Char('d'), _) | (KeyCode::Char('D'), _) | (KeyCode::Right, _) => {
+                Input::Move(Move::Right)
+            }
+            (KeyCode::Char('w'), _) | (KeyCode::Char('W'), _) | (KeyCode::Up, _) => {
+                Input::Move(Move::Up)
+            }
+            (KeyCode::Char('s'), _) | (KeyCode::Char('S'), _) | (KeyCode::Down, _) => {
+                Input::Move(Move::Down)
+            }
+            _ => Input::Move(Move::Dont),
+        }
+    }
+}
 
 /// Define the arguments and the CLI option interface for twozero48.
 #[derive(Parser)]
@@ -57,16 +88,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             continue;
         };
 
-        let mov = match (key.code, key.modifiers) {
-            (KeyCode::Char('q'), _)
-            | (KeyCode::Char('Q'), _)
-            | (KeyCode::Char('c'), KeyModifiers::CONTROL)
-            | (KeyCode::Esc, _) => break,
-            (KeyCode::Char('a'), _) | (KeyCode::Char('A'), _) | (KeyCode::Left, _) => Move::Left,
-            (KeyCode::Char('d'), _) | (KeyCode::Char('D'), _) | (KeyCode::Right, _) => Move::Right,
-            (KeyCode::Char('w'), _) | (KeyCode::Char('W'), _) | (KeyCode::Up, _) => Move::Up,
-            (KeyCode::Char('s'), _) | (KeyCode::Char('S'), _) | (KeyCode::Down, _) => Move::Down,
-            _ => Move::Dont,
+        let mov = match Input::from(key) {
+            Input::Quit => break,
+            Input::Move(mov) => mov,
         };
 
         let end_msg = match state.apply_move(mov) {

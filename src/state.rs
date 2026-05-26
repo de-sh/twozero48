@@ -1,24 +1,32 @@
 use std::io;
 
-use crate::{Game, Move, Status, Tile, Tui, tui::MoveEffects};
+use ratatui::backend::{Backend, CrosstermBackend};
 
-pub struct State {
-    terminal: Tui,
-    game: Game,
+use crate::{Game, Move, Play, Status, Tile, Tui, TuiWriter, tui::MoveEffects};
+
+pub struct State<P = Game, B: Backend = CrosstermBackend<TuiWriter>> {
+    terminal: Tui<B>,
+    game: P,
     move_effects: MoveEffects,
     valid_move: bool,
     previous_largest: Tile,
 }
 
-impl State {
+impl State<Game, CrosstermBackend<TuiWriter>> {
     pub fn new(game: Game) -> io::Result<Self> {
-        Ok(Self {
-            terminal: Tui::new()?,
+        Ok(Self::with_tui(game, Tui::new()?))
+    }
+}
+
+impl<P: Play, B: Backend> State<P, B> {
+    pub fn with_tui(game: P, terminal: Tui<B>) -> Self {
+        Self {
+            terminal,
             game,
             move_effects: MoveEffects::new(),
             valid_move: true,
             previous_largest: Tile::EMPTY,
-        })
+        }
     }
 
     pub fn tick_effects(&mut self) {
@@ -46,7 +54,7 @@ impl State {
         if self.valid_move {
             self.move_effects
                 .record_move(mov, &old_board, self.game.board());
-            self.game.refresh();
+            self.game.spawn();
 
             let current_largest = self.game.largest_tile();
             self.check_milestone(current_largest);
