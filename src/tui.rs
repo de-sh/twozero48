@@ -1,7 +1,6 @@
 use std::{
     collections::HashSet,
     io::{self, Write},
-    time::{Duration, Instant},
 };
 
 use crossterm::{
@@ -17,14 +16,13 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-use crate::{Board, Move, Play, Tile};
+use crate::{Play, Tile};
 
 const CELL_W: u16 = 10;
 const CELL_H: u16 = 5;
 const HEADER_H: u16 = 2;
 const FOOTER_H: u16 = 1;
 const EMPTY_BG: Color = Color::Rgb(40, 40, 40);
-const FLASH_DURATION: Duration = Duration::from_millis(120);
 
 fn brighten(color: Color, amt: u8) -> Color {
     match color {
@@ -35,108 +33,6 @@ fn brighten(color: Color, amt: u8) -> Color {
         ),
         c => c,
     }
-}
-
-struct AnimState {
-    dx: i16,
-    dy: i16,
-    started: Instant,
-}
-
-impl AnimState {
-    fn new(mov: Move) -> Option<Self> {
-        let (dx, dy) = match mov {
-            Move::Left => (-2, 0),
-            Move::Right => (2, 0),
-            Move::Up => (0, -2),
-            Move::Down => (0, 2),
-            Move::Dont => return None,
-        };
-
-        Some(Self {
-            dx,
-            dy,
-            started: Instant::now(),
-        })
-    }
-
-    fn shift(&self) -> (i16, i16) {
-        let elapsed = self.started.elapsed().as_millis().min(i16::MAX as u128) as i16;
-        let step = (elapsed / 65).min(3);
-        let remaining = (3 - step).max(0);
-        (self.dx * remaining * 2 / 3, self.dy * remaining * 2 / 3)
-    }
-
-    fn expired(&self) -> bool {
-        self.started.elapsed() >= Duration::from_millis(200)
-    }
-}
-
-#[derive(Default)]
-pub struct MoveEffects {
-    anim: Option<AnimState>,
-    flash: HashSet<(usize, usize)>,
-    flash_until: Option<Instant>,
-}
-
-impl MoveEffects {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
-        self.anim = AnimState::new(mov);
-        self.flash = changed_cells(old_board, new_board);
-        self.flash_until = Some(Instant::now() + FLASH_DURATION);
-    }
-
-    pub fn tick(&mut self) {
-        if self
-            .flash_until
-            .map(|t| Instant::now() >= t)
-            .unwrap_or(false)
-        {
-            self.flash.clear();
-            self.flash_until = None;
-        }
-
-        if self.anim.as_ref().map(|a| a.expired()).unwrap_or(false) {
-            self.anim = None;
-        }
-    }
-
-    pub fn shift(&self) -> (i16, i16) {
-        self.anim.as_ref().map(|a| a.shift()).unwrap_or((0, 0))
-    }
-
-    pub fn flash(&self) -> &HashSet<(usize, usize)> {
-        &self.flash
-    }
-
-    pub fn is_active(&self) -> bool {
-        self.anim.is_some() || self.flash_until.is_some()
-    }
-
-    pub fn clear(&mut self) {
-        self.anim = None;
-        self.flash.clear();
-        self.flash_until = None;
-    }
-}
-
-fn changed_cells(old: &Board, new: &Board) -> HashSet<(usize, usize)> {
-    let mut set = HashSet::new();
-    let size = old.size().min(new.size());
-    for r in 0..size {
-        for c in 0..size {
-            let ov = old[(r, c)];
-            let nv = new[(r, c)];
-            if nv != ov && nv != Tile::EMPTY {
-                set.insert((r, c));
-            }
-        }
-    }
-    set
 }
 
 /// Returns the [`Color`] of the tile(used for rendering)
