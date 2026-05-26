@@ -128,7 +128,6 @@ impl Play for MockGame {
             Move::Right => self.board.move_right(),
             Move::Up => self.board.move_up(),
             Move::Down => self.board.move_down(),
-            Move::Dont => 0,
         };
         self.board != before
     }

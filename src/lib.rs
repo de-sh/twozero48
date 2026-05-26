@@ -10,7 +10,7 @@ pub use board::Board;
 pub use state::State;
 pub use tui::{Tui, TuiWriter};
 
-/// Used to depict user choice, an input to the [`Game`] API
+/// Directional input to the [`Game`] API.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Move {
     /// Executes leftward compression of board elements
@@ -21,8 +21,6 @@ pub enum Move {
     Up,
     /// Executes downward compression of board elements
     Down,
-    /// Condition triggered incase input is improper
-    Dont,
 }
 
 /// Used to depict the status in the [`Game`] API
@@ -161,7 +159,6 @@ impl Play for Game {
             Move::Right => self.board.move_right(),
             Move::Up => self.board.move_up(),
             Move::Down => self.board.move_down(),
-            _ => 0,
         };
 
         self.board != temp

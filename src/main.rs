@@ -9,6 +9,7 @@ use twozero48::{Game, Move, State, Status, Tile};
 pub enum Input {
     Move(Move),
     Quit,
+    Ignore,
 }
 
 impl From<KeyEvent> for Input {
@@ -30,7 +31,7 @@ impl From<KeyEvent> for Input {
             (KeyCode::Char('s'), _) | (KeyCode::Char('S'), _) | (KeyCode::Down, _) => {
                 Input::Move(Move::Down)
             }
-            _ => Input::Move(Move::Dont),
+            _ => Input::Ignore,
         }
     }
 }
@@ -90,6 +91,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let mov = match Input::from(key) {
             Input::Quit => break,
+            Input::Ignore => {
+                state.clear_invalid_move();
+                continue;
+            }
             Input::Move(mov) => mov,
         };
 

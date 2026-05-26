@@ -48,11 +48,6 @@ impl<P: Play, B: Backend> State<P, B> {
     }
 
     pub fn apply_move(&mut self, mov: Move) -> Status {
-        if matches!(mov, Move::Dont) {
-            self.valid_move = false;
-            return self.game.status();
-        }
-
         let old_board = self.game.board().clone();
 
         self.valid_move = self.game.mover(mov);
@@ -107,20 +102,19 @@ struct AnimState {
 }
 
 impl AnimState {
-    fn new(mov: Move) -> Option<Self> {
+    fn new(mov: Move) -> Self {
         let (dx, dy) = match mov {
             Move::Left => (-2, 0),
             Move::Right => (2, 0),
             Move::Up => (0, -2),
             Move::Down => (0, 2),
-            Move::Dont => return None,
         };
 
-        Some(Self {
+        Self {
             dx,
             dy,
             started: Instant::now(),
-        })
+        }
     }
 
     fn shift(&self) -> (i16, i16) {
@@ -148,7 +142,7 @@ impl MoveEffects {
     }
 
     fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
-        self.anim = AnimState::new(mov);
+        self.anim = Some(AnimState::new(mov));
         self.flash = changed_cells(old_board, new_board);
         self.flash_until = Some(Instant::now() + FLASH_DURATION);
     }
