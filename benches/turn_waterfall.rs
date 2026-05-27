@@ -4,50 +4,18 @@ use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_ma
 use ratatui::backend::TestBackend;
 use twozero48::{Board, Move, Play, State, Status, Tile, Tui};
 
+mod common;
+
 const ANIMATION_FRAMES: usize = 4;
 const WIDTH: u16 = 80;
 const HEIGHT: u16 = 24;
 
-#[derive(Clone, Copy)]
-enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
-
-impl Direction {
-    fn name(self) -> &'static str {
-        match self {
-            Self::Left => "left",
-            Self::Right => "right",
-            Self::Up => "up",
-            Self::Down => "down",
-        }
-    }
-
-    fn mov(self) -> Move {
-        match self {
-            Self::Left => Move::Left,
-            Self::Right => Move::Right,
-            Self::Up => Move::Up,
-            Self::Down => Move::Down,
-        }
-    }
-}
-
 fn turn_waterfall(c: &mut Criterion) {
     let mut group = c.benchmark_group("turn_waterfall");
 
-    for direction in [
-        Direction::Left,
-        Direction::Right,
-        Direction::Up,
-        Direction::Down,
-    ] {
-        group.bench_function(BenchmarkId::new("4x4", direction.name()), |b| {
-            let seed = sample_board();
-            let mov = direction.mov();
+    for mov in [Move::Left, Move::Right, Move::Up, Move::Down] {
+        group.bench_function(BenchmarkId::new("4x4", format!("{mov:?}")), |b| {
+            let seed = common::sample_board();
 
             b.iter_batched(
                 || state_for(seed.clone()),
@@ -155,24 +123,6 @@ fn state_for(board: Board) -> State<MockGame, TestBackend> {
     let tui = Tui::from_backend(TestBackend::new(WIDTH, HEIGHT))
         .expect("constructing TestBackend terminal failed");
     State::with_tui(MockGame::from_board(board, Tile::new(16)), tui)
-}
-
-fn sample_board() -> Board {
-    let mut board = Board::new(4).expect("board created");
-    let grid = [
-        [Tile::TWO, Tile::TWO, Tile::FOUR, Tile::FOUR],
-        [Tile::new(3), Tile::new(4), Tile::new(5), Tile::new(6)],
-        [Tile::new(3), Tile::new(7), Tile::new(8), Tile::new(9)],
-        [Tile::new(10), Tile::new(11), Tile::new(12), Tile::new(13)],
-    ];
-
-    for (row, tiles) in grid.into_iter().enumerate() {
-        for (col, tile) in tiles.into_iter().enumerate() {
-            board[(row, col)] = tile;
-        }
-    }
-
-    board
 }
 
 criterion_group!(benches, turn_waterfall);
