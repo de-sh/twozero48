@@ -3,12 +3,10 @@ use std::fmt::Display;
 use rand::prelude::*;
 
 mod board;
-pub mod state;
-pub mod tui;
+mod tui;
 
 pub use board::Board;
-pub use state::State;
-pub use tui::{Tui, TuiWriter};
+pub use tui::State;
 
 /// Directional input to the [`Game`] API.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
