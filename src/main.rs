@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         state.tick_effects();
-        state.render_board()?;
+        state.render_tui()?;
 
         // Non-blocking poll while animating, blocking otherwise
         if state.effects_active() && !event::poll(Duration::from_millis(30))? {
@@ -98,13 +98,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             Input::Move(mov) => mov,
         };
 
-        let end_msg = match state.apply_move(mov) {
-            Status::On => continue,
-            Status::Won => "You won!  Press any key to exit.",
-            Status::Lost => "Game over!  Press any key to exit.",
-        };
+        if matches!(state.apply_move(mov), Status::On) {
+            continue;
+        }
 
-        state.render_end_message(end_msg)?;
+        state.clear_effects();
+        state.render_tui()?;
         event::read()?;
         break;
     }

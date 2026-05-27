@@ -7,11 +7,11 @@ use std::{
 use rand::{Rng, rngs::ThreadRng};
 use ratatui::backend::{Backend, CrosstermBackend};
 
-use crate::{
-    Board, Game, Move, Status, Tile,
-    tui::terminal::{Tui, TuiWriter},
-};
+use terminal::{Tui, TuiWriter};
 
+use crate::{Board, Game, Move, Status, Tile, tui::render::Screen};
+
+mod render;
 mod terminal;
 
 const FLASH_DURATION: Duration = Duration::from_millis(120);
@@ -56,6 +56,10 @@ impl<B: Backend, R: Rng> State<B, R> {
         self.valid_move = true;
     }
 
+    pub fn clear_effects(&mut self) {
+        self.move_effects.clear();
+    }
+
     pub fn apply_move(&mut self, mov: Move) -> Status {
         let old_board = self.game.board().clone();
 
@@ -70,27 +74,9 @@ impl<B: Backend, R: Rng> State<B, R> {
         self.game.status()
     }
 
-    pub fn render_board(&mut self) -> io::Result<()> {
-        let (x_shift, y_shift) = self.move_effects.shift();
-        let message = if self.valid_move {
-            None
-        } else {
-            Some("No tiles moved — try a different direction")
-        };
-
-        self.terminal.render_board(
-            &self.game,
-            message,
-            x_shift,
-            y_shift,
-            self.move_effects.flash(),
-        )
-    }
-
-    pub fn render_end_message(&mut self, message: &str) -> io::Result<()> {
-        self.move_effects.clear();
+    pub fn render_tui(&mut self) -> io::Result<()> {
         self.terminal
-            .render_board(&self.game, Some(message), 0, 0, self.move_effects.flash())
+            .draw(Screen::new(&self.game, &self.move_effects, self.valid_move))
     }
 }
 

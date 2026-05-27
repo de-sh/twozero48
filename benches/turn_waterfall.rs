@@ -27,9 +27,7 @@ fn turn_waterfall(c: &mut Criterion) {
                     for _ in 0..ANIMATION_FRAMES {
                         state.tick_effects();
                         black_box(state.effects_active());
-                        state
-                            .render_board()
-                            .expect("rendering to TestBackend failed");
+                        state.render_tui().expect("rendering to TestBackend failed");
                     }
 
                     black_box(state);
