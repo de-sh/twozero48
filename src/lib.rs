@@ -32,16 +32,6 @@ pub enum Status {
     On,
 }
 
-pub trait Play {
-    fn board(&self) -> &Board;
-    fn winning(&self) -> Tile;
-    fn score(&self) -> usize;
-    fn largest_tile(&self) -> Tile;
-    fn status(&self) -> Status;
-    fn mover(&mut self, mov: Move) -> bool;
-    fn spawn(&mut self);
-}
-
 /// Represents a tile on the game board. exp is the exponent of 2 that the tile represents.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tile {
@@ -87,59 +77,79 @@ impl Display for Tile {
 }
 
 /// An object that models the board to play 2048 on and defines the rules for the game
-pub struct Game {
+pub struct Game<R: Rng = ThreadRng> {
     board: Board,
     winning: Tile,
     score: usize,
+    rng: R,
 }
 
-impl Game {
+impl Game<ThreadRng> {
     /// Constructs a board to play the game
     /// board_size >= 2, defines board's length & breadth
     /// winning defines the Tile for the game to have been won
     pub fn new(board_size: usize, winning: Tile) -> Result<Self, String> {
-        let mut init = Self {
-            board: Board::new(board_size)?,
-            winning,
-            score: 0,
-        };
-
-        // Spawns first random value
-        init.spawn();
-
-        Ok(init)
+        Self::with_rng(board_size, winning, rand::rng())
     }
 }
 
-impl Play for Game {
-    /// Return immutable reference to the board
-    fn board(&self) -> &Board {
+impl<R: Rng> Game<R> {
+    /// Return immutable reference to the board.
+    pub fn board(&self) -> &Board {
         &self.board
     }
 
-    /// Returns the Tile for winning
-    fn winning(&self) -> Tile {
+    /// Returns the Tile for winning.
+    pub fn winning(&self) -> Tile {
         self.winning
     }
 
-    /// Returns the current score
-    fn score(&self) -> usize {
+    /// Returns the current score.
+    pub fn score(&self) -> usize {
         self.score
     }
 
-    /// Returns the current largest tile on the board
-    fn largest_tile(&self) -> Tile {
+    /// Returns the current largest tile on the board.
+    pub fn largest_tile(&self) -> Tile {
         self.board.max_tile()
     }
 
-    /// Returns the current status of the game
-    fn status(&self) -> Status {
+    /// Returns the current status of the game.
+    pub fn status(&self) -> Status {
         if self.board.contains(self.winning) {
             Status::Won
         } else if self.board.is_locked() {
             Status::Lost
         } else {
             Status::On
+        }
+    }
+}
+
+impl<R: Rng> Game<R> {
+    /// Constructs a board with the provided random generator.
+    pub fn with_rng(board_size: usize, winning: Tile, rng: R) -> Result<Self, String> {
+        let mut init = Self {
+            board: Board::new(board_size)?,
+            winning,
+            score: 0,
+            rng,
+        };
+
+        // Spawns two random tiles
+        init.spawn();
+        init.spawn();
+
+        Ok(init)
+    }
+
+    /// Constructs a game around a known board without performing initial spawns.
+    pub fn from_board_with_rng(board: Board, winning: Tile, rng: R) -> Self {
+        Self {
+            board,
+            winning,
+            score: 0,
+            rng,
         }
     }
 
@@ -167,9 +177,8 @@ impl Play for Game {
         if empty.is_empty() {
             return;
         }
-        let mut rng = rand::rng();
-        let (r, c) = empty[rng.random_range(0..empty.len())];
-        self.board[(r, c)] = if rng.random_bool(0.1) {
+        let (r, c) = empty[self.rng.random_range(0..empty.len())];
+        self.board[(r, c)] = if self.rng.random_bool(0.1) {
             Tile::FOUR
         } else {
             Tile::TWO
@@ -179,8 +188,18 @@ impl Play for Game {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
+
+    impl Game<StdRng> {
+        pub fn from_parts(board: Board, winning: Tile, score: usize) -> Self {
+            Self {
+                board,
+                winning,
+                score,
+                rng: StdRng::seed_from_u64(0),
+            }
+        }
+    }
 
     #[test]
     fn score_starts_at_zero() {

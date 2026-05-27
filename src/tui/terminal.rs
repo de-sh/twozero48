@@ -7,6 +7,7 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
+use rand::Rng;
 use ratatui::{
     Terminal,
     backend::{Backend, CrosstermBackend},
@@ -16,7 +17,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-use crate::{Play, Tile};
+use crate::{Game, Tile};
 
 const CELL_W: u16 = 10;
 const CELL_H: u16 = 5;
@@ -100,9 +101,9 @@ impl<B: Backend> Tui<B> {
         Terminal::new(backend).map(Self)
     }
 
-    pub fn render_board(
+    pub fn render_board<R: Rng>(
         &mut self,
-        game: &impl Play,
+        game: &Game<R>,
         message: Option<&str>,
         x_shift: i16,
         y_shift: i16,

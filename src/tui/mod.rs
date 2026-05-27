@@ -4,10 +4,11 @@ use std::{
     time::{Duration, Instant},
 };
 
+use rand::{Rng, rngs::ThreadRng};
 use ratatui::backend::{Backend, CrosstermBackend};
 
 use crate::{
-    Board, Game, Move, Play, Status, Tile,
+    Board, Game, Move, Status, Tile,
     tui::terminal::{Tui, TuiWriter},
 };
 
@@ -15,26 +16,26 @@ mod terminal;
 
 const FLASH_DURATION: Duration = Duration::from_millis(120);
 
-pub struct State<P = Game, B: Backend = CrosstermBackend<TuiWriter>> {
+pub struct State<B: Backend = CrosstermBackend<TuiWriter>, R: Rng = ThreadRng> {
     terminal: Tui<B>,
-    game: P,
+    game: Game<R>,
     move_effects: MoveEffects,
     valid_move: bool,
 }
 
-impl State<Game, CrosstermBackend<TuiWriter>> {
+impl State<CrosstermBackend<TuiWriter>, ThreadRng> {
     pub fn new(game: Game) -> io::Result<Self> {
         Ok(Self::with_tui(game, Tui::new()?))
     }
 }
 
-impl<P: Play, B: Backend> State<P, B> {
-    pub fn with_backend(game: P, backend: B) -> Result<Self, B::Error> {
+impl<B: Backend, R: Rng> State<B, R> {
+    pub fn with_backend(game: Game<R>, backend: B) -> Result<Self, B::Error> {
         let tui = Tui::from_backend(backend)?;
         Ok(Self::with_tui(game, tui))
     }
 
-    fn with_tui(game: P, terminal: Tui<B>) -> Self {
+    fn with_tui(game: Game<R>, terminal: Tui<B>) -> Self {
         Self {
             terminal,
             game,

@@ -1,8 +1,9 @@
 use std::hint::black_box;
 
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
+use rand::{SeedableRng, rngs::StdRng};
 use ratatui::backend::TestBackend;
-use twozero48::{Board, Move, Play, State, Status, Tile};
+use twozero48::{Board, Game, Move, State, Tile};
 
 mod common;
 
@@ -41,87 +42,9 @@ fn turn_waterfall(c: &mut Criterion) {
     group.finish();
 }
 
-/// A deterministic mock game for benchmarking.
-struct MockGame {
-    board: Board,
-    winning: Tile,
-    score: usize,
-    spawn_cursor: usize,
-    spawn_count: usize,
-}
-
-impl MockGame {
-    fn from_board(board: Board, winning: Tile) -> Self {
-        Self {
-            board,
-            winning,
-            score: 0,
-            spawn_cursor: 0,
-            spawn_count: 0,
-        }
-    }
-}
-
-impl Play for MockGame {
-    fn board(&self) -> &Board {
-        &self.board
-    }
-
-    fn winning(&self) -> Tile {
-        self.winning
-    }
-
-    fn score(&self) -> usize {
-        self.score
-    }
-
-    fn largest_tile(&self) -> Tile {
-        self.board.max_tile()
-    }
-
-    fn status(&self) -> Status {
-        if self.board.contains(self.winning) {
-            Status::Won
-        } else if self.board.is_locked() {
-            Status::Lost
-        } else {
-            Status::On
-        }
-    }
-
-    fn mover(&mut self, mov: Move) -> bool {
-        let before = self.board.clone();
-        self.score += match mov {
-            Move::Left => self.board.move_left(),
-            Move::Right => self.board.move_right(),
-            Move::Up => self.board.move_up(),
-            Move::Down => self.board.move_down(),
-        };
-        self.board != before
-    }
-
-    /// spawns a tile in deterministic order.
-    fn spawn(&mut self) {
-        let len = self.board.size() * self.board.size();
-        for _ in 0..len {
-            let idx = self.spawn_cursor % len;
-            self.spawn_cursor += 1;
-            let cell = (idx / self.board.size(), idx % self.board.size());
-            if self.board[cell] == Tile::EMPTY {
-                self.board[cell] = match self.spawn_count % 3 {
-                    2 => Tile::FOUR,
-                    _ => Tile::TWO,
-                };
-                self.spawn_count += 1;
-                return;
-            }
-        }
-    }
-}
-
-fn state_for(board: Board) -> State<MockGame, TestBackend> {
+fn state_for(board: Board) -> State<TestBackend, StdRng> {
     State::with_backend(
-        MockGame::from_board(board, Tile::new(16)),
+        Game::from_board_with_rng(board, Tile::new(16), StdRng::seed_from_u64(0)),
         TestBackend::new(WIDTH, HEIGHT),
     )
     .expect("constructing TestBackend terminal failed")
