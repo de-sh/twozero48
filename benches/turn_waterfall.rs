@@ -2,7 +2,7 @@ use std::hint::black_box;
 
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
 use ratatui::backend::TestBackend;
-use twozero48::{Board, Move, Play, State, Status, Tile, Tui};
+use twozero48::{Board, Move, Play, State, Status, Tile};
 
 mod common;
 
@@ -120,9 +120,11 @@ impl Play for MockGame {
 }
 
 fn state_for(board: Board) -> State<MockGame, TestBackend> {
-    let tui = Tui::from_backend(TestBackend::new(WIDTH, HEIGHT))
-        .expect("constructing TestBackend terminal failed");
-    State::with_tui(MockGame::from_board(board, Tile::new(16)), tui)
+    State::with_backend(
+        MockGame::from_board(board, Tile::new(16)),
+        TestBackend::new(WIDTH, HEIGHT),
+    )
+    .expect("constructing TestBackend terminal failed")
 }
 
 criterion_group!(benches, turn_waterfall);

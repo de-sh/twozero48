@@ -6,7 +6,12 @@ use std::{
 
 use ratatui::backend::{Backend, CrosstermBackend};
 
-use crate::{Board, Game, Move, Play, Status, Tile, Tui, TuiWriter};
+use crate::{
+    Board, Game, Move, Play, Status, Tile,
+    tui::terminal::{Tui, TuiWriter},
+};
+
+mod terminal;
 
 const FLASH_DURATION: Duration = Duration::from_millis(120);
 
@@ -15,7 +20,6 @@ pub struct State<P = Game, B: Backend = CrosstermBackend<TuiWriter>> {
     game: P,
     move_effects: MoveEffects,
     valid_move: bool,
-    previous_largest: Tile,
 }
 
 impl State<Game, CrosstermBackend<TuiWriter>> {
@@ -25,13 +29,17 @@ impl State<Game, CrosstermBackend<TuiWriter>> {
 }
 
 impl<P: Play, B: Backend> State<P, B> {
-    pub fn with_tui(game: P, terminal: Tui<B>) -> Self {
+    pub fn with_backend(game: P, backend: B) -> Result<Self, B::Error> {
+        let tui = Tui::from_backend(backend)?;
+        Ok(Self::with_tui(game, tui))
+    }
+
+    fn with_tui(game: P, terminal: Tui<B>) -> Self {
         Self {
             terminal,
             game,
-            move_effects: MoveEffects::new(),
+            move_effects: MoveEffects::default(),
             valid_move: true,
-            previous_largest: Tile::EMPTY,
         }
     }
 
@@ -56,9 +64,6 @@ impl<P: Play, B: Backend> State<P, B> {
             self.move_effects
                 .record_move(mov, &old_board, self.game.board());
             self.game.spawn();
-
-            let current_largest = self.game.largest_tile();
-            self.check_milestone(current_largest);
         }
 
         self.game.status()
@@ -85,13 +90,6 @@ impl<P: Play, B: Backend> State<P, B> {
         self.move_effects.clear();
         self.terminal
             .render_board(&self.game, Some(message), 0, 0, self.move_effects.flash())
-    }
-
-    fn check_milestone(&mut self, tile: Tile) {
-        if tile.exponent() <= self.previous_largest.exponent() {
-            return;
-        }
-        self.previous_largest = tile;
     }
 }
 
@@ -137,10 +135,6 @@ struct MoveEffects {
 }
 
 impl MoveEffects {
-    fn new() -> Self {
-        Self::default()
-    }
-
     fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
         self.anim = Some(AnimState::new(mov));
         self.flash = changed_cells(old_board, new_board);
