@@ -158,7 +158,7 @@ fn state_for(board: Board) -> State<MockGame, TestBackend> {
 }
 
 fn sample_board() -> Board {
-    let mut board = Board::new(4);
+    let mut board = Board::new(4).expect("board created");
     let grid = [
         [Tile::TWO, Tile::TWO, Tile::FOUR, Tile::FOUR],
         [Tile::new(3), Tile::new(4), Tile::new(5), Tile::new(6)],

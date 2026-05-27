@@ -69,7 +69,7 @@ fn parse_winning(score: &str) -> Result<Tile, String> {
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command line arguments to initiate/configure a game
     let opts = Opts::parse();
-    let game = Game::new(opts.board_size, opts.winning);
+    let game = Game::new(opts.board_size, opts.winning)?;
     let mut state = State::new(game)?;
 
     loop {

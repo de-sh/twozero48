@@ -6,11 +6,11 @@ use super::Tile;
 const MAX_SIZE: usize = usize::MAX.isqrt();
 
 /// Ensures the board size is valid
-fn check_size(size: usize) {
-    assert!(
-        (2..=MAX_SIZE).contains(&size),
-        "board size must be between 2 and {MAX_SIZE}"
-    );
+fn check_size(size: usize) -> Result<(), String> {
+    (2..=MAX_SIZE)
+        .contains(&size)
+        .then_some(())
+        .ok_or_else(|| format!("board size must be between 2 and {MAX_SIZE}"))
 }
 
 /// A Square (size x size) 2D grid of tiles for the 2048 game
@@ -21,21 +21,21 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new(size: usize) -> Self {
-        check_size(size);
-        Self {
+    pub fn new(size: usize) -> Result<Self, String> {
+        check_size(size)?;
+        Ok(Self {
             tiles: vec![Tile::EMPTY; size * size],
             size,
-        }
+        })
     }
 
     #[cfg(test)]
-    pub fn from_grid<const N: usize>(grid: [[Tile; N]; N]) -> Self {
-        check_size(N);
+    pub fn from_grid<const N: usize>(grid: [[Tile; N]; N]) -> Result<Self, String> {
+        check_size(N)?;
         let tiles = (0..N)
             .flat_map(|row| (0..N).map(move |col| grid[row][col]))
             .collect();
-        Self { tiles, size: N }
+        Ok(Self { tiles, size: N })
     }
 
     pub fn size(&self) -> usize {
@@ -199,22 +199,22 @@ mod tests {
             [Tile::FOUR, Tile::FOUR, Tile::FOUR, Tile::FOUR],
             [Tile::TWO, Tile::TWO, Tile::TWO, Tile::EMPTY],
             [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-        ]);
+        ])
+        .expect("board ready");
         let tiles_ptr = board.tiles.as_ptr();
 
         let score = board.move_left();
 
         assert_eq!(board.tiles.as_ptr(), tiles_ptr);
         assert_eq!(score, 4 + 8 + 8 + 4);
-        assert_eq!(
-            board,
-            Board::from_grid([
-                [Tile::FOUR, Tile::FOUR, Tile::EMPTY, Tile::EMPTY],
-                [Tile::new(3), Tile::new(3), Tile::EMPTY, Tile::EMPTY],
-                [Tile::FOUR, Tile::TWO, Tile::EMPTY, Tile::EMPTY],
-                [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-            ]),
-        );
+        let expected = Board::from_grid([
+            [Tile::FOUR, Tile::FOUR, Tile::EMPTY, Tile::EMPTY],
+            [Tile::new(3), Tile::new(3), Tile::EMPTY, Tile::EMPTY],
+            [Tile::FOUR, Tile::TWO, Tile::EMPTY, Tile::EMPTY],
+            [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
+        ])
+        .expect("board ready");
+        assert_eq!(board, expected);
     }
 
     #[test]
@@ -224,20 +224,20 @@ mod tests {
             [Tile::TWO, Tile::TWO, Tile::TWO, Tile::EMPTY],
             [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
             [Tile::FOUR, Tile::FOUR, Tile::FOUR, Tile::FOUR],
-        ]);
+        ])
+        .expect("board ready");
 
         let score = board.move_right();
 
         assert_eq!(score, 4 + 4 + 8 + 8);
-        assert_eq!(
-            board,
-            Board::from_grid([
-                [Tile::EMPTY, Tile::EMPTY, Tile::FOUR, Tile::FOUR],
-                [Tile::EMPTY, Tile::EMPTY, Tile::TWO, Tile::FOUR],
-                [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-                [Tile::EMPTY, Tile::EMPTY, Tile::new(3), Tile::new(3)],
-            ]),
-        );
+        let expected = Board::from_grid([
+            [Tile::EMPTY, Tile::EMPTY, Tile::FOUR, Tile::FOUR],
+            [Tile::EMPTY, Tile::EMPTY, Tile::TWO, Tile::FOUR],
+            [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
+            [Tile::EMPTY, Tile::EMPTY, Tile::new(3), Tile::new(3)],
+        ])
+        .expect("board ready");
+        assert_eq!(board, expected);
     }
 
     #[test]
@@ -247,20 +247,20 @@ mod tests {
             [Tile::EMPTY, Tile::FOUR, Tile::EMPTY, Tile::TWO],
             [Tile::TWO, Tile::FOUR, Tile::EMPTY, Tile::TWO],
             [Tile::FOUR, Tile::FOUR, Tile::EMPTY, Tile::EMPTY],
-        ]);
+        ])
+        .expect("board ready");
 
         let score = board.move_up();
 
         assert_eq!(score, 4 + 8 + 8 + 4);
-        assert_eq!(
-            board,
-            Board::from_grid([
-                [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::FOUR],
-                [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::TWO],
-                [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-                [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-            ]),
-        );
+        let expected = Board::from_grid([
+            [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::FOUR],
+            [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::TWO],
+            [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
+            [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
+        ])
+        .expect("board ready");
+        assert_eq!(board, expected);
     }
 
     #[test]
@@ -270,25 +270,25 @@ mod tests {
             [Tile::EMPTY, Tile::FOUR, Tile::EMPTY, Tile::TWO],
             [Tile::TWO, Tile::FOUR, Tile::EMPTY, Tile::TWO],
             [Tile::FOUR, Tile::FOUR, Tile::EMPTY, Tile::EMPTY],
-        ]);
+        ])
+        .expect("board ready");
 
         let score = board.move_down();
 
         assert_eq!(score, 4 + 8 + 8 + 4);
-        assert_eq!(
-            board,
-            Board::from_grid([
-                [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-                [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
-                [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::TWO],
-                [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::FOUR],
-            ]),
-        );
+        let expected = Board::from_grid([
+            [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
+            [Tile::EMPTY, Tile::EMPTY, Tile::EMPTY, Tile::EMPTY],
+            [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::TWO],
+            [Tile::FOUR, Tile::new(3), Tile::EMPTY, Tile::FOUR],
+        ])
+        .expect("board ready");
+        assert_eq!(board, expected);
     }
 
     #[test]
     fn indexing_maps_rows_and_columns_to_flat_row_major_offsets() {
-        let mut board = Board::new(4);
+        let mut board = Board::new(4).expect("board created");
 
         board[(2, 1)] = Tile::new(5);
         board[(3, 3)] = Tile::new(6);

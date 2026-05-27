@@ -99,13 +99,9 @@ impl Game {
     /// Constructs a board to play the game
     /// board_size >= 2, defines board's length & breadth
     /// winning defines the Tile for the game to have been won
-    pub fn new(board_size: usize, winning: Tile) -> Self {
-        // Ensure the board size is at least 2
-        let board_size = board_size.clamp(2, usize::MAX);
-        let board = Board::new(board_size);
-
+    pub fn new(board_size: usize, winning: Tile) -> Result<Self, String> {
         let mut init = Self {
-            board,
+            board: Board::new(board_size)?,
             winning,
             score: 0,
         };
@@ -113,7 +109,7 @@ impl Game {
         // Spawns first random value
         init.spawn();
 
-        init
+        Ok(init)
     }
 }
 
@@ -190,22 +186,23 @@ mod tests {
 
     #[test]
     fn score_starts_at_zero() {
-        let game = Game::new(4, Tile { exp: 11 });
+        let game = Game::new(4, Tile { exp: 11 }).expect("game created");
         assert_eq!(game.score(), 0);
     }
 
     #[test]
     fn score_accumulates_after_merge() {
-        let mut game = Game::new(2, Tile { exp: 11 });
+        let mut game = Game::new(2, Tile { exp: 11 }).expect("game created");
         // Force a known board state: [[2,2], [0,0]]
-        game.board = Board::from_grid([[Tile::TWO, Tile::TWO], [Tile::EMPTY, Tile::EMPTY]]);
+        game.board = Board::from_grid([[Tile::TWO, Tile::TWO], [Tile::EMPTY, Tile::EMPTY]])
+            .expect("board ready");
         game.mover(Move::Left);
         assert_eq!(game.score(), 4);
     }
 
     #[test]
     fn current_largest_tile_on_board() {
-        let mut game = Game::new(4, Tile { exp: 11 });
+        let mut game = Game::new(4, Tile { exp: 11 }).expect("game created");
         game.board[(0, 0)] = Tile { exp: 6 };
         assert_eq!(game.largest_tile(), Tile { exp: 6 });
     }

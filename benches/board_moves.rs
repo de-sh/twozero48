@@ -54,7 +54,7 @@ fn board_moves(c: &mut Criterion) {
 }
 
 fn sample_board() -> Board {
-    let mut board = Board::new(4);
+    let mut board = Board::new(4).expect("board created");
     let grid = [
         [Tile::TWO, Tile::EMPTY, Tile::TWO, Tile::FOUR],
         [Tile::FOUR, Tile::FOUR, Tile::EMPTY, Tile::TWO],
