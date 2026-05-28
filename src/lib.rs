@@ -124,6 +124,16 @@ impl<R: Rng> Game<R> {
             Status::On
         }
     }
+
+    /// Resets game state to fresh
+    pub fn reset(&mut self) {
+        let size = self.board().size();
+        self.board = Board::new(size).expect("Size did not change, should not break");
+        self.score = 0;
+
+        self.spawn();
+        self.spawn();
+    }
 }
 
 impl<R: Rng> Game<R> {

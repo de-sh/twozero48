@@ -63,6 +63,10 @@ impl<R: Rng> State<R> {
     pub fn as_screen(&mut self) -> Screen<'_, R> {
         Screen::new(&self.game, &self.move_effects, self.valid_move)
     }
+
+    pub fn reset(&mut self) {
+        self.game.reset();
+    }
 }
 
 struct AnimState {

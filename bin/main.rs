@@ -8,6 +8,7 @@ use twozero48::{Game, Move, State, Status, Tile, Tui};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Input {
     Move(Move),
+    Restart,
     Quit,
     Ignore,
 }
@@ -19,6 +20,7 @@ impl From<KeyEvent> for Input {
             | (KeyCode::Char('Q'), _)
             | (KeyCode::Char('c'), KeyModifiers::CONTROL)
             | (KeyCode::Esc, _) => Input::Quit,
+            (KeyCode::Char('r'), _) | (KeyCode::Char('R'), _) => Input::Restart,
             (KeyCode::Char('a'), _) | (KeyCode::Char('A'), _) | (KeyCode::Left, _) => {
                 Input::Move(Move::Left)
             }
@@ -67,7 +69,6 @@ fn parse_winning(score: &str) -> Result<Tile, String> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // Collect command line arguments to initiate/configure a game
     let opts = Opts::parse();
     let game = Game::new(opts.board_size, opts.winning)?;
     let mut state = State::new(game);
@@ -92,6 +93,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let mov = match Input::from(key) {
             Input::Quit => break,
+            Input::Restart => {
+                state.reset();
+                continue;
+            }
             Input::Ignore => {
                 state.clear_invalid_move();
                 continue;
@@ -105,8 +110,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         state.clear_effects();
         tui.draw(state.as_screen())?;
-        event::read()?;
-        break;
     }
 
     Ok(())

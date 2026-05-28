@@ -310,8 +310,10 @@ impl Footer {
     fn line(&self) -> Line<'static> {
         match self {
             Self::ExitPrompt => Line::from(vec![
-                Span::styled("Press any key", bold_fg(TEXT_FG)),
-                Span::raw(" to exit"),
+                Span::styled("R", bold_fg(TEXT_FG)),
+                Span::raw(": restart  ·  "),
+                Span::styled("Q", bold_fg(TEXT_FG)),
+                Span::raw(": quit"),
             ]),
             Self::InvalidMove => Line::from(vec![
                 Span::styled("No tiles moved", bold_fg(INVALID_MOVE_FG)),
@@ -319,7 +321,10 @@ impl Footer {
             ]),
             Self::Controls { winning } => Line::from(vec![
                 Span::styled("WASD", bold_fg(TEXT_FG)),
-                Span::raw(" / arrows: move  ·  "),
+                Span::raw("/ arrows / swipe: move"),
+                Span::raw("  ·  "),
+                Span::styled("R", bold_fg(TEXT_FG)),
+                Span::raw(": restart  ·  "),
                 Span::styled("Q", bold_fg(TEXT_FG)),
                 Span::raw(": quit  ·  Win: "),
                 Span::styled(winning.to_string(), bold_fg(tile_color(*winning))),
