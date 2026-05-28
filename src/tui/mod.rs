@@ -1,16 +1,16 @@
-use std::{
-    collections::HashSet,
-    time::{Duration, Instant},
-};
+use std::{collections::HashSet, time::Duration};
 
 use rand::{Rng, rngs::ThreadRng};
-
-use crate::{Board, Game, Input, Move, Status, Tile};
+use web_time::Instant;
 
 pub use render::Screen;
 pub use terminal::Tui;
 
-mod render;
+use crate::{Board, Game, Input, Move, Status, Tile};
+
+#[cfg(not(target_arch = "wasm32"))]
+mod native;
+pub(crate) mod render;
 mod terminal;
 
 const FLASH_DURATION: Duration = Duration::from_millis(120);
@@ -137,13 +137,13 @@ pub struct MoveEffects {
 }
 
 impl MoveEffects {
-    fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
+    pub(crate) fn record_move(&mut self, mov: Move, old_board: &Board, new_board: &Board) {
         self.anim = Some(AnimState::new(mov));
         self.flash = changed_cells(old_board, new_board);
         self.flash_until = Some(Instant::now() + FLASH_DURATION);
     }
 
-    fn tick(&mut self) {
+    pub(crate) fn tick(&mut self) {
         let now = Instant::now();
         if self.flash_until.is_some_and(|until| now >= until) {
             self.flash.clear();
@@ -155,19 +155,19 @@ impl MoveEffects {
         }
     }
 
-    fn shift(&self) -> (i16, i16) {
+    pub(crate) fn shift(&self) -> (i16, i16) {
         self.anim.as_ref().map_or((0, 0), AnimState::shift)
     }
 
-    fn flash(&self) -> &HashSet<(usize, usize)> {
+    pub(crate) fn flash(&self) -> &HashSet<(usize, usize)> {
         &self.flash
     }
 
-    fn is_active(&self) -> bool {
+    pub(crate) fn is_active(&self) -> bool {
         self.anim.is_some() || self.flash_until.is_some()
     }
 
-    fn clear(&mut self) {
+    pub(crate) fn clear(&mut self) {
         self.anim = None;
         self.flash.clear();
         self.flash_until = None;

@@ -31,6 +31,22 @@ WASD / arrow keys: move
 Q / Esc / Ctrl-C: quit
 ```
 
+## Web App
+
+The web app uses [ratzilla] to render the same Ratatui game UI in the browser!
+
+> check it out: [shenoi.dev/twozero48](https://shenoi.dev/twozero48)
+
+### Build
+
+To build the web app, use trunk(requires wasm toolchain)
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install --locked trunk --version 0.21.14
+trunk build --release
+```
+
 ## Acknowledgements
 
 1. [ratatui] - the best way to build terminal UIs. period.
@@ -38,12 +54,14 @@ Q / Esc / Ctrl-C: quit
 3. [clap] - breeziest cli argument parsing.
 4. [rand] - plug and play (pseudo)random number generation.
 5. [criterion] - easy benchmarking!
+6. [ratzilla] - eazipeazy ratatui on the web.
 
 ## License
 Code in this repository is licensed under the permissive MIT license. All code contributions are by default considered to be under the same.
 
 [rustup]: https://rustup.rs
 [ratatui]: https://ratatui.rs/
+[ratzilla]: https://github.com/ratatui/ratzilla
 [crossterm]: https://github.com/crossterm-rs/crossterm
 [clap]: https://docs.rs/clap/
 [rand]: https://docs.rs/rand/

@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Clear, Paragraph},
+    widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
 };
 
 use crate::{Board, Game, Status, Tile};
@@ -14,7 +14,7 @@ use super::MoveEffects;
 const CELL_W: u16 = 10;
 const CELL_H: u16 = 5;
 const HEADER_H: u16 = 2;
-const FOOTER_H: u16 = 1;
+const FOOTER_H: u16 = 2;
 const EMPTY_BG: Color = Color::Rgb(40, 40, 40);
 const MUTED_FG: Color = Color::Rgb(100, 100, 100);
 const TEXT_FG: Color = Color::Rgb(200, 200, 200);
@@ -98,7 +98,11 @@ impl<'a, R: Rng> Screen<'a, R> {
         let layout = BoardLayout::new(frame.area(), board.size());
 
         Header::new(self.game.score(), self.game.largest_tile()).render(frame, layout.header);
-        BoardGrid::new(board, self.effects).render(frame, layout.terminal, layout.grid);
+        BoardGrid::new(board, self.effects, layout.cell_w, layout.cell_h).render(
+            frame,
+            layout.terminal,
+            layout.grid,
+        );
         if let Ok(overlay) = Overlay::try_from(self.game) {
             overlay.render(frame, layout.playfield, layout.grid);
         }
@@ -112,13 +116,18 @@ struct BoardLayout {
     playfield: Rect,
     footer: Rect,
     grid: Rect,
+    cell_w: u16,
+    cell_h: u16,
 }
 
 impl BoardLayout {
     fn new(terminal: Rect, board_size: usize) -> Self {
         let board_size = board_size as u16;
-        let grid_width = CELL_W * board_size;
-        let grid_height = CELL_H * board_size;
+        // Scale cell width down on narrow terminals
+        let cell_w = (terminal.width / board_size).clamp(4, CELL_W);
+        let cell_h = ((cell_w * CELL_H + CELL_W / 2) / CELL_W).clamp(4, CELL_H);
+        let grid_width = cell_w * board_size;
+        let grid_height = cell_h * board_size;
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -143,6 +152,8 @@ impl BoardLayout {
             playfield,
             footer: chunks[2],
             grid,
+            cell_w,
+            cell_h,
         }
     }
 }
@@ -197,11 +208,18 @@ impl Header {
 struct BoardGrid<'a> {
     board: &'a Board,
     effects: &'a MoveEffects,
+    cell_w: u16,
+    cell_h: u16,
 }
 
 impl<'a> BoardGrid<'a> {
-    fn new(board: &'a Board, effects: &'a MoveEffects) -> Self {
-        Self { board, effects }
+    fn new(board: &'a Board, effects: &'a MoveEffects, cell_w: u16, cell_h: u16) -> Self {
+        Self {
+            board,
+            effects,
+            cell_w,
+            cell_h,
+        }
     }
 
     fn render(&self, frame: &mut Frame<'_>, terminal_area: Rect, grid_rect: Rect) {
@@ -232,11 +250,11 @@ impl<'a> BoardGrid<'a> {
         let (x_shift, y_shift) = self.effects.shift();
         let x = grid_rect
             .x
-            .checked_add_signed(col as i16 * CELL_W as i16 + x_shift)?;
+            .checked_add_signed(col as i16 * self.cell_w as i16 + x_shift)?;
         let y = grid_rect
             .y
-            .checked_add_signed(row as i16 * CELL_H as i16 + y_shift)?;
-        let area = Rect::new(x, y, CELL_W, CELL_H);
+            .checked_add_signed(row as i16 * self.cell_h as i16 + y_shift)?;
+        let area = Rect::new(x, y, self.cell_w, self.cell_h);
 
         (area.intersection(terminal_area) == area).then_some(area)
     }
@@ -333,7 +351,12 @@ impl Footer {
     }
 
     fn render(&self, frame: &mut Frame<'_>, area: Rect) {
-        render_centered_line(frame, self.line(), area);
+        frame.render_widget(
+            Paragraph::new(self.line())
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true }),
+            area,
+        );
     }
 }
 

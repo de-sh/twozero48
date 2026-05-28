@@ -6,12 +6,26 @@ edition = "2024"
 license = "MIT"
 repository = "https://github.com/de-sh/twozero48"
 description = "A CLI implementation of 2048, in rust"
+default-run = "twozero48"
 
 [dependencies]
+rand = "0.10"
+ratatui = { version = "0.30", default-features = false, features = ["std"] }
+web-time = "1.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 clap = { version = "4.6", features = ["derive", "cargo"] }
 crossterm = "0.29"
-rand = "0.10"
-ratatui = "0.30"
+ratatui = { version = "0.30", default-features = false, features = [
+    "crossterm",
+    "std",
+] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.4", features = ["wasm_js"] }
+ratzilla = "0.3"
+web-sys = { version = "0.3", features = ["Window"] }
 
 [dev-dependencies]
 criterion = "0.8"
@@ -19,6 +33,10 @@ criterion = "0.8"
 [[bin]]
 name = "twozero48"
 path = "bin/main.rs"
+
+[[bin]]
+name = "twozero48-web"
+path = "bin/web.rs"
 
 [[bench]]
 name = "board_moves"

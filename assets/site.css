@@ -1,0 +1,148 @@
+:root {
+    color-scheme: dark;
+    --grey: #282c34;
+    --panel: #15130f;
+    --paper: #f8f1e8;
+    --muted: #b7ab9d;
+    --line: rgba(248, 241, 232, 0.18);
+    --green: #32c997;
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    background: var(--grey);
+    color: var(--paper);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-width: 320px;
+    height: 100svh;
+    overflow: hidden;
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.page-shell {
+    position: relative;
+    width: 100vw;
+    height: 100svh;
+}
+
+.game-shell {
+    position: absolute;
+    inset: 0;
+}
+
+.terminal-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: inherit;
+}
+
+.terminal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--paper);
+    font-family:
+        "SFMono-Regular", Consolas, "Liberation Mono", Menlo, ui-monospace,
+        monospace;
+    font-size: 1rem;
+    line-height: 2ch;
+}
+
+/* Override ratzilla's hardcoded height: 15px so 1rem font does not clip. */
+.terminal pre {
+    margin: 0;
+    font: inherit;
+    height: auto !important;
+    line-height: inherit !important;
+}
+
+code {
+    color: #fff5d2;
+    font-family:
+        "SFMono-Regular", Consolas, "Liberation Mono", Menlo, ui-monospace,
+        monospace;
+    font-size: 0.98em;
+}
+
+.install-command {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(0.5rem);
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 750;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.install-command--visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+    visibility: visible;
+}
+
+.prompt-sign {
+    font-weight: 800;
+}
+
+.copy-btn {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 0;
+    transition: color 0.15s;
+}
+
+.copy-btn:hover {
+    color: var(--paper);
+}
+
+.copy-btn:focus-visible {
+    outline: 2px solid rgba(255, 216, 90, 0.45);
+    outline-offset: 3px;
+}
+
+.copy-btn--copied {
+    color: var(--green);
+}

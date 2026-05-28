@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="Play twozero48 in the browser or install the Rust TUI."
+        />
+        <title>twozero48</title>
+        <base data-trunk-public-url />
+        <link data-trunk rel="css" href="site.css" />
+        <link
+            data-trunk
+            rel="rust"
+            href="../Cargo.toml"
+            data-bin="twozero48-web"
+        />
+    </head>
+    <body>
+        <main class="page-shell">
+            <section class="game-shell" aria-label="Playable twozero48 board">
+                <div class="terminal-stage" id="game-stage">
+                    <pre
+                        id="twozero48-terminal"
+                        class="terminal"
+                        tabindex="0"
+                        aria-label="Playable twozero48 terminal"
+                    ></pre>
+                </div>
+            </section>
+
+            <span class="install-command" id="install"
+                ><code><span class="prompt-sign">$</span> cargo install twozero48</code>
+                <button
+                    class="copy-btn"
+                    aria-label="Copy install command"
+                    title="Copy to clipboard"
+                >
+                    <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                        />
+                        <path
+                            d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                        />
+                    </svg>
+                </button>
+            </span>
+        </main>
+
+        <script>
+            const terminal = document.getElementById("twozero48-terminal");
+            const stage = document.getElementById("game-stage");
+            const installCta = document.getElementById("install");
+
+            function revealInstall() {
+                installCta.classList.add("install-command--visible");
+            }
+
+            function hideInstall() {
+                installCta.classList.remove("install-command--visible");
+            }
+
+            window.addEventListener("wheel", (e) => {
+                e.deltaY < 0 ? revealInstall() : hideInstall();
+            }, { passive: true });
+
+            function sendKey(key) {
+                const init = {
+                    key,
+                    code: key,
+                    bubbles: true,
+                    cancelable: true,
+                };
+                document.dispatchEvent(new KeyboardEvent("keydown", init));
+                window.dispatchEvent(new KeyboardEvent("keydown", init));
+                terminal.focus();
+            }
+
+            terminal.addEventListener("click", () => terminal.focus());
+
+            const ICON_COPY = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+            const ICON_CHECK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+            document
+                .querySelector(".copy-btn")
+                .addEventListener("click", () => {
+                    navigator.clipboard
+                        .writeText("cargo install twozero48")
+                        .then(() => {
+                            const btn = document.querySelector(".copy-btn");
+                            btn.innerHTML = ICON_CHECK;
+                            btn.classList.add("copy-btn--copied");
+                            setTimeout(() => {
+                                btn.innerHTML = ICON_COPY;
+                                btn.classList.remove("copy-btn--copied");
+                            }, 1500);
+                        })
+                        .catch(() => {});
+                });
+
+            let touchOrigin = null;
+
+            stage.addEventListener(
+                "touchstart",
+                (event) => {
+                    const t = event.touches[0];
+                    touchOrigin = { x: t.clientX, y: t.clientY };
+                },
+                { passive: true },
+            );
+
+            stage.addEventListener(
+                "touchend",
+                (event) => {
+                    if (!touchOrigin) return;
+                    const t = event.changedTouches[0];
+                    const dx = t.clientX - touchOrigin.x;
+                    const dy = t.clientY - touchOrigin.y;
+                    touchOrigin = null;
+
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+
+                    if (Math.abs(dy) > Math.abs(dx)) {
+                        dy < 0 ? revealInstall() : hideInstall();
+                    }
+
+                    const key =
+                        Math.abs(dx) > Math.abs(dy)
+                            ? dx > 0
+                                ? "ArrowRight"
+                                : "ArrowLeft"
+                            : dy > 0
+                              ? "ArrowDown"
+                              : "ArrowUp";
+
+                    sendKey(key);
+                },
+                { passive: true },
+            );
+        </script>
+    </body>
+</html>
