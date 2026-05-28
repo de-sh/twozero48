@@ -18,7 +18,7 @@ criterion = "0.8"
 
 [[bin]]
 name = "twozero48"
-path = "src/main.rs"
+path = "bin/main.rs"
 
 [[bench]]
 name = "board_moves"
