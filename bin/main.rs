@@ -2,39 +2,17 @@ use std::{error::Error, time::Duration};
 
 use clap::Parser;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use twozero48::{Game, Move, State, Status, Tile, Tui};
+use twozero48::{Game, Input, Move, State, Tile, Tui};
 
-/// Parsed terminal input.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Input {
-    Move(Move),
-    Restart,
-    Quit,
-    Ignore,
-}
-
-impl From<KeyEvent> for Input {
-    fn from(key: KeyEvent) -> Self {
-        match (key.code, key.modifiers) {
-            (KeyCode::Char('q'), _)
-            | (KeyCode::Char('Q'), _)
-            | (KeyCode::Char('c'), KeyModifiers::CONTROL)
-            | (KeyCode::Esc, _) => Input::Quit,
-            (KeyCode::Char('r'), _) | (KeyCode::Char('R'), _) => Input::Restart,
-            (KeyCode::Char('a'), _) | (KeyCode::Char('A'), _) | (KeyCode::Left, _) => {
-                Input::Move(Move::Left)
-            }
-            (KeyCode::Char('d'), _) | (KeyCode::Char('D'), _) | (KeyCode::Right, _) => {
-                Input::Move(Move::Right)
-            }
-            (KeyCode::Char('w'), _) | (KeyCode::Char('W'), _) | (KeyCode::Up, _) => {
-                Input::Move(Move::Up)
-            }
-            (KeyCode::Char('s'), _) | (KeyCode::Char('S'), _) | (KeyCode::Down, _) => {
-                Input::Move(Move::Down)
-            }
-            _ => Input::Ignore,
-        }
+fn from_key(key: KeyEvent) -> Input {
+    match (key.code, key.modifiers) {
+        (KeyCode::Char('c'), KeyModifiers::CONTROL) | (KeyCode::Esc, _) => Input::Quit,
+        (KeyCode::Char(ch), _) => Input::from_char(ch),
+        (KeyCode::Left, _) => Input::Move(Move::Left),
+        (KeyCode::Right, _) => Input::Move(Move::Right),
+        (KeyCode::Up, _) => Input::Move(Move::Up),
+        (KeyCode::Down, _) => Input::Move(Move::Down),
+        _ => Input::Ignore,
     }
 }
 
@@ -70,8 +48,7 @@ fn parse_winning(score: &str) -> Result<Tile, String> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let opts = Opts::parse();
-    let game = Game::new(opts.board_size, opts.winning)?;
-    let mut state = State::new(game);
+    let mut state = State::new(Game::new(opts.board_size, opts.winning)?);
     let mut tui = Tui::new()?;
 
     loop {
@@ -91,25 +68,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             continue;
         };
 
-        let mov = match Input::from(key) {
+        match from_key(key) {
             Input::Quit => break,
-            Input::Restart => {
-                state.reset();
-                continue;
-            }
-            Input::Ignore => {
-                state.clear_invalid_move();
-                continue;
-            }
-            Input::Move(mov) => mov,
-        };
-
-        if matches!(state.apply_move(mov), Status::On) {
-            continue;
+            input => state.handle_input(input),
         }
-
-        state.clear_effects();
-        tui.draw(state.as_screen())?;
     }
 
     Ok(())

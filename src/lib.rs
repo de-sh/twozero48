@@ -21,6 +21,29 @@ pub enum Move {
     Down,
 }
 
+/// Parsed player input, independent of the platform event source.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Input {
+    Move(Move),
+    Restart,
+    Quit,
+    Ignore,
+}
+
+impl Input {
+    pub fn from_char(ch: char) -> Self {
+        match ch.to_ascii_lowercase() {
+            'a' => Self::Move(Move::Left),
+            'd' => Self::Move(Move::Right),
+            'w' => Self::Move(Move::Up),
+            's' => Self::Move(Move::Down),
+            'r' => Self::Restart,
+            'q' => Self::Quit,
+            _ => Self::Ignore,
+        }
+    }
+}
+
 /// Used to depict the status in the [`Game`] API
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Status {

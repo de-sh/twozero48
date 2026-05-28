@@ -5,7 +5,7 @@ use std::{
 
 use rand::{Rng, rngs::ThreadRng};
 
-use crate::{Board, Game, Move, Status, Tile};
+use crate::{Board, Game, Input, Move, Status, Tile};
 
 pub use render::Screen;
 pub use terminal::Tui;
@@ -60,8 +60,34 @@ impl<R: Rng> State<R> {
         self.game.status()
     }
 
-    pub fn as_screen(&mut self) -> Screen<'_, R> {
+    pub fn as_screen(&self) -> Screen<'_, R> {
         Screen::new(&self.game, &self.move_effects, self.valid_move)
+    }
+
+    pub fn status(&self) -> Status {
+        self.game.status()
+    }
+
+    pub fn handle_input(&mut self, input: Input) {
+        match input {
+            Input::Quit => unreachable!("Ensure never passed to handle_input!!"),
+            Input::Restart => {
+                self.reset();
+                self.clear_effects();
+                self.clear_invalid_move();
+            }
+            Input::Ignore => {
+                self.clear_invalid_move();
+            }
+            Input::Move(mov) if self.status() == Status::On => {
+                if self.apply_move(mov) != Status::On {
+                    self.clear_effects();
+                }
+            }
+            Input::Move(_) => {
+                self.clear_invalid_move();
+            }
+        }
     }
 
     pub fn reset(&mut self) {
