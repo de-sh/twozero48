@@ -6,14 +6,11 @@
     --muted: #b7ab9d;
     --line: rgba(248, 241, 232, 0.18);
     --green: #32c997;
-    font-family:
-        Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+    --font-mono:
+        ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas,
+        "Liberation Mono", "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono",
+        "Courier New", monospace;
+    font-family: var(--font-mono);
     background: var(--grey);
     color: var(--paper);
 }
@@ -65,9 +62,7 @@ a {
     padding: 0;
     background: transparent;
     color: var(--paper);
-    font-family:
-        "SFMono-Regular", Consolas, "Liberation Mono", Menlo, ui-monospace,
-        monospace;
+    font-family: var(--font-mono);
     font-size: 1rem;
     line-height: 2ch;
 }
@@ -82,9 +77,7 @@ a {
 
 code {
     color: #fff5d2;
-    font-family:
-        "SFMono-Regular", Consolas, "Liberation Mono", Menlo, ui-monospace,
-        monospace;
+    font-family: var(--font-mono);
     font-size: 0.98em;
 }
 
