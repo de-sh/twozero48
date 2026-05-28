@@ -1,6 +1,6 @@
 [package]
 name = "twozero48"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Devdutt Shenoi <devdutt@outlook.in>"]
 edition = "2024"
 license = "MIT"
