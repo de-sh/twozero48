@@ -160,18 +160,12 @@ impl MoveEffects {
 }
 
 fn changed_cells(old: &Board, new: &Board) -> HashSet<(usize, usize)> {
-    let mut set = HashSet::new();
     let size = old.size().min(new.size());
-
-    for row in 0..size {
-        for col in 0..size {
-            let old_tile = old[(row, col)];
-            let new_tile = new[(row, col)];
-            if new_tile != old_tile && new_tile != Tile::EMPTY {
-                set.insert((row, col));
-            }
-        }
-    }
-
-    set
+    (0..size)
+        .flat_map(|r| (0..size).map(move |c| (r, c)))
+        .filter(|&(r, c)| {
+            let t = new[(r, c)];
+            t != old[(r, c)] && t != Tile::EMPTY
+        })
+        .collect()
 }
