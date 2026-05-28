@@ -42,7 +42,7 @@ impl Drop for TuiWriter {
     }
 }
 
-pub(crate) struct Tui<B: Backend>(pub(super) Terminal<B>);
+pub struct Tui<B: Backend>(pub(super) Terminal<B>);
 
 impl Tui<CrosstermBackend<TuiWriter>> {
     pub fn new() -> io::Result<Self> {

@@ -3,7 +3,7 @@ use std::hint::black_box;
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
 use rand::{SeedableRng, rngs::StdRng};
 use ratatui::backend::TestBackend;
-use twozero48::{Board, Game, Move, State, Tile};
+use twozero48::{Board, Game, Move, State, Tile, Tui};
 
 mod common;
 
@@ -19,15 +19,16 @@ fn turn_waterfall(c: &mut Criterion) {
             let seed = common::sample_board();
 
             b.iter_batched(
-                || state_for(seed.clone()),
-                |mut state| {
+                || utils_for(seed.clone()),
+                |(mut state, mut tui)| {
                     let status = state.apply_move(mov);
                     black_box(status);
 
                     for _ in 0..ANIMATION_FRAMES {
                         state.tick_effects();
                         black_box(state.effects_active());
-                        state.render_tui().expect("rendering to TestBackend failed");
+                        let screen = state.as_screen();
+                        tui.draw(screen).expect("rendering to TestBackend failed");
                     }
 
                     black_box(state);
@@ -40,12 +41,16 @@ fn turn_waterfall(c: &mut Criterion) {
     group.finish();
 }
 
-fn state_for(board: Board) -> State<TestBackend, StdRng> {
-    State::with_backend(
-        Game::from_board_with_rng(board, Tile::new(16), StdRng::seed_from_u64(0)),
-        TestBackend::new(WIDTH, HEIGHT),
+fn utils_for(board: Board) -> (State<StdRng>, Tui<TestBackend>) {
+    (
+        State::new(Game::from_board_with_rng(
+            board,
+            Tile::new(16),
+            StdRng::seed_from_u64(0),
+        )),
+        Tui::from_backend(TestBackend::new(WIDTH, HEIGHT))
+            .expect("constructing TestBackend terminal failed"),
     )
-    .expect("constructing TestBackend terminal failed")
 }
 
 criterion_group!(benches, turn_waterfall);

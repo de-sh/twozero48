@@ -2,7 +2,7 @@ use std::{error::Error, time::Duration};
 
 use clap::Parser;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use twozero48::{Game, Move, State, Status, Tile};
+use twozero48::{Game, Move, State, Status, Tile, Tui};
 
 /// Parsed terminal input.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -70,11 +70,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Collect command line arguments to initiate/configure a game
     let opts = Opts::parse();
     let game = Game::new(opts.board_size, opts.winning)?;
-    let mut state = State::new(game)?;
+    let mut state = State::new(game);
+    let mut tui = Tui::new()?;
 
     loop {
         state.tick_effects();
-        state.render_tui()?;
+        tui.draw(state.as_screen())?;
 
         // Non-blocking poll while animating, blocking otherwise
         if state.effects_active() && !event::poll(Duration::from_millis(30))? {
@@ -103,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         state.clear_effects();
-        state.render_tui()?;
+        tui.draw(state.as_screen())?;
         event::read()?;
         break;
     }

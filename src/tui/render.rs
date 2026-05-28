@@ -78,7 +78,7 @@ fn bold_fg(color: Color) -> Style {
     fg(color).add_modifier(Modifier::BOLD)
 }
 
-pub(super) struct Screen<'a, R: Rng> {
+pub struct Screen<'a, R: Rng> {
     game: &'a Game<R>,
     effects: &'a MoveEffects,
     valid_move: bool,

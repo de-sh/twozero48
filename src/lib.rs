@@ -6,7 +6,7 @@ mod board;
 mod tui;
 
 pub use board::Board;
-pub use tui::State;
+pub use tui::{State, Tui};
 
 /// Directional input to the [`Game`] API.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

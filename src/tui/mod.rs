@@ -1,43 +1,29 @@
 use std::{
     collections::HashSet,
-    io,
     time::{Duration, Instant},
 };
 
 use rand::{Rng, rngs::ThreadRng};
-use ratatui::backend::{Backend, CrosstermBackend};
 
-use terminal::{Tui, TuiWriter};
+use crate::{Board, Game, Move, Status, Tile};
 
-use crate::{Board, Game, Move, Status, Tile, tui::render::Screen};
+pub use render::Screen;
+pub use terminal::Tui;
 
 mod render;
 mod terminal;
 
 const FLASH_DURATION: Duration = Duration::from_millis(120);
 
-pub struct State<B: Backend = CrosstermBackend<TuiWriter>, R: Rng = ThreadRng> {
-    terminal: Tui<B>,
+pub struct State<R: Rng = ThreadRng> {
     game: Game<R>,
     move_effects: MoveEffects,
     valid_move: bool,
 }
 
-impl State<CrosstermBackend<TuiWriter>, ThreadRng> {
-    pub fn new(game: Game) -> io::Result<Self> {
-        Ok(Self::with_tui(game, Tui::new()?))
-    }
-}
-
-impl<B: Backend, R: Rng> State<B, R> {
-    pub fn with_backend(game: Game<R>, backend: B) -> Result<Self, B::Error> {
-        let tui = Tui::from_backend(backend)?;
-        Ok(Self::with_tui(game, tui))
-    }
-
-    fn with_tui(game: Game<R>, terminal: Tui<B>) -> Self {
+impl<R: Rng> State<R> {
+    pub fn new(game: Game<R>) -> Self {
         Self {
-            terminal,
             game,
             move_effects: MoveEffects::default(),
             valid_move: true,
@@ -74,9 +60,8 @@ impl<B: Backend, R: Rng> State<B, R> {
         self.game.status()
     }
 
-    pub fn render_tui(&mut self) -> io::Result<()> {
-        self.terminal
-            .draw(Screen::new(&self.game, &self.move_effects, self.valid_move))
+    pub fn as_screen(&mut self) -> Screen<'_, R> {
+        Screen::new(&self.game, &self.move_effects, self.valid_move)
     }
 }
 
@@ -115,7 +100,7 @@ impl AnimState {
 }
 
 #[derive(Default)]
-struct MoveEffects {
+pub struct MoveEffects {
     anim: Option<AnimState>,
     flash: HashSet<(usize, usize)>,
     flash_until: Option<Instant>,
