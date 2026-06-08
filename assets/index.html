@@ -3,12 +3,47 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>twozero48</title>
         <meta
             name="description"
-            content="Play twozero48 in the browser or install the Rust TUI."
+            content="The twozero48 TUI, now in your browser 🎲"
         />
-        <title>twozero48</title>
+
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://shenoi.dev/twozero48/" />
+        <meta property="og:title" content="twozero48" />
+        <meta
+            property="og:description"
+            content="The twozero48 TUI, now in your browser 🎲"
+        />
+        <meta
+            property="og:image"
+            content="https://shenoi.dev/twozero48/cover.png"
+        />
+        <meta property="og:image:width" content="2015" />
+        <meta property="og:image:height" content="1573" />
+        <meta
+            property="og:image:alt"
+            content="twozero48 terminal UI showing the 2048 game board"
+        />
+
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://shenoi.dev/twozero48/" />
+        <meta property="twitter:title" content="twozero48" />
+        <meta
+            property="twitter:description"
+            content="The twozero48 TUI, now in your browser 🎲"
+        />
+        <meta
+            property="twitter:image"
+            content="https://shenoi.dev/twozero48/cover.png"
+        />
+        <meta
+            property="twitter:image:alt"
+            content="twozero48 terminal UI showing the 2048 game board"
+        />
         <base data-trunk-public-url />
+        <link data-trunk rel="copy-file" href="cover.png" />
         <link data-trunk rel="css" href="site.css" />
         <link
             data-trunk
@@ -31,7 +66,10 @@
             </section>
 
             <span class="install-command" id="install"
-                ><code><span class="prompt-sign">$</span> cargo install twozero48</code>
+                ><code
+                    ><span class="prompt-sign">$</span> cargo install
+                    twozero48</code
+                >
                 <button
                     class="action-btn copy-btn"
                     aria-label="Copy install command"
@@ -98,9 +136,13 @@
                 installCta.classList.remove("install-command--visible");
             }
 
-            window.addEventListener("wheel", (e) => {
-                e.deltaY < 0 ? revealInstall() : hideInstall();
-            }, { passive: true });
+            window.addEventListener(
+                "wheel",
+                (e) => {
+                    e.deltaY < 0 ? revealInstall() : hideInstall();
+                },
+                { passive: true },
+            );
 
             function sendKey(key) {
                 const init = {
