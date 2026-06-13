@@ -1,20 +1,21 @@
 Output assets/demo.gif
 
-Require target/debug/twozero48
+# Capture the release binary because debug-mode terminal rendering can be slow
+# enough to show visible tearing in the recording.
+Require target/release/twozero48
 
 Set Shell "zsh"
 Set Theme "OneDark"
 Set Width 1000
-Set Height 800
-Set FontSize 22
+Set Height 930
 Set LetterSpacing 0
-Set LineHeight 1.2
 Set Padding 4
-Set Framerate 24
+# 50 FPS keeps the slide animation smooth while staying reasonable for a GIF.
+Set Framerate 50
 Set TypingSpeed 1ms
 
 Hide
-Type "env -u NO_COLOR COLORTERM=truecolor TERM=xterm-256color ./target/debug/twozero48"
+Type "env -u NO_COLOR COLORTERM=truecolor TERM=xterm-256color ./target/release/twozero48"
 Enter
 Sleep 2s
 
