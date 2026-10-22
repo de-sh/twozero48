@@ -35,7 +35,7 @@ Q / Esc / Ctrl-C: quit
 
 The web app uses [ratzilla] to render the same Ratatui game UI in the browser!
 
-> check it out: [shenoi.dev/twozero48](https://shenoi.dev/twozero48)
+> check it out: [twozero48.shenoi.dev](https://twozero48.shenoi.dev)
 
 ### Build
 

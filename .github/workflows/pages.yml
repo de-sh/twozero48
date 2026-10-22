@@ -40,7 +40,7 @@ jobs:
           tool: trunk@0.21.14
 
       - name: Build web app
-        run: env -u NO_COLOR trunk build --release --public-url "${{ steps.pages.outputs.base_path }}/"
+        run: env -u NO_COLOR trunk build --release --public-url /
 
       - name: Disable Jekyll
         run: touch dist/.nojekyll
